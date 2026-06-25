@@ -1,0 +1,124 @@
+# addr	string
+0x0800A0BC	serstor_hw.c
+0x0800A0F1	 !@P@Q@R@S@T@U@V@W@X@(@)@*@+@,@-@.@/@0
+0x0800A15F	 extdata_device.c
+0x0800A4A3	 confsys.c
+0x0800A6DC	extdata_upn.c
+0x0800AE60	Focusrite A.E
+0x0800AE70	Novation MSD
+0x0800AE80	Launchkey Mini MK3 MIDI
+0x0800AE98	Launchkey Mini MK3 MIDI Int
+0x0800AEB4	Launchkey Mini MK3 HID
+0x0800AECC	Launchkey Mini MK3 MIDI Port
+0x0800AEEC	Launchkey Mini MK3 DAW Port
+0x0800CF9F	 confstore.c
+0x0800D7C3	 extdata_upgrade.c
+0x0800DE9F	 extdata_msd.c
+0x0800F8CF	 io_listener.c
+0x0801071C	%******%-//////-Q222222Q_777777_
+0x08011343	 layout_devconf.c
+0x08011707	 inputmidi_listener.c
+0x08014913	 ui_menumgr.c
+0x08014F6B	 midiobj_backend.c
+0x08015CD8	confsys_init.c
+0x08015E0F	 extdata_confsys.c
+0x08016977	 layout_channel.c
+0x080169DF	 scale.c
+0x08016D70	hui_state.c
+0x08017F77	 extdata_confstore.c
+0x08018B97	 confstore_sec.c
+0x08019CC8	English
+0x08019CE3	Calibration
+0x08019CEF	Successful
+0x08019CFA	Calibration
+0x08019D06	Failed
+0x08019D0D	Move Pitch down
+0x08019D1D	Move Pitch mid
+0x08019D2C	Move Pitch up
+0x08019D3A	Move Pitch mid
+0x08019D49	Move Mod down
+0x08019D57	Move Mod up
+0x08019D63	Then press + / -
+0x08019D74	Fixed Chord
+0x08019D80	Scale On
+0x08019D89	Scale Set
+0x08019D93	Minor
+0x08019D99	Major
+0x08019D9F	Dorian
+0x08019DA6	Mixolydian
+0x08019DB1	Phrygian
+0x08019DBA	HarmonicMinor
+0x08019DC8	MinorPentaton
+0x08019DD6	MajorPentaton
+0x08019DE4	Octave
+0x08019DEB	Transpose
+0x08019DF5	Pad Mode
+0x08019DFE	Pot Mode
+0x08019E07	Fader Mode
+0x08019E12	Session
+0x08019E1F	Scale Chord
+0x08019E2B	User Chord
+0x08019E36	Device
+0x08019E3D	Volume
+0x08019E48	Send A
+0x08019E4F	Send B
+0x08019E56	MIDI Channel
+0x08019E63	MIDI Channel
+0x08019E70	MIDI Channel
+0x08019E7D	Vel Curve (Keys)
+0x08019E8E	Vel Curve (Pads)
+0x08019E9F	Pad Aftertouch
+0x08019EAE	Pad AT Threshold
+0x08019EBF	Pot Pickup
+0x08019ECA	MIDI Clock Out
+0x08019ED9	Brightness
+0x08019EE4	Vegas Mode
+0x08019EEF	Ext. Feedback
+0x08019EFD	MIDI Start/Stop
+0x08019F0D	Power On Modes
+0x08019F1E	-----------Off\n
+0x08019F2F	Soft----------\n
+0x08019F40	---Normal-----\n
+0x08019F51	-------Hard---\n
+0x08019F61	Channel
+0x08019F69	Polyphonic
+0x08019F75	Low-----------\n
+0x08019F86	----Normal----\n
+0x08019F97	----------High\n
+0x08019FB1	Octave
+0x08019FBF	Latch
+0x08019FC5	Swing
+0x08019FCB	Gate Length
+0x08019FD7	Mutate
+0x08019FDE	Deviate
+0x08019FE6	Strum
+0x08019FF4	Up/Down
+0x08019FFC	As Played
+0x0801A006	Random
+0x0801A00D	Chord
+0x0801A013	Mutate
+0x0801A02C	Triplet
+0x0801A034	No rests
+0x0801A04B	Random
+0x0801A052	Deviate
+0x0801A05A	Arp Control Lock
+0x0801A06B	Arp On
+0x0801A072	Tempo (External)
+0x0801A083	Tempo
+0x0801A08D	Novation
+0x0801A096	Launchkey  v0000
+0x0801A0A7	Chord Pickup
+0x0801A0B4	Delete Chord!
+0x0801A0C2	Chord
+0x0801A0C9	Triads
+0x0801A0DF	Lock On
+0x0801A0E7	Lock Off
+0x0801A0F4	Bottom
+0x0801A108	Chords:
+0x0801A120	Top       Solo
+0x0801A12F	Bottom    Mute
+0x0801A13E	Fader Buttons
+0x0801A150	Select
+0x0801CFA8	                
+0x0801D08C	api.focusrite-novation.com/register?method=usb&upn=
+0x0801D457	User 1

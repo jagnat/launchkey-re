@@ -1,0 +1,133 @@
+# Decoded Launchkey Mini MK3 firmware palette (128 entries)
+# Source: stock.bin @ file 0x14250 (flash 0x0801C250); 4 bytes/entry = B,G,R,pad
+# Encoding CONFIRMED on hardware 2026-06-25: byte0=Blue, byte1=Green, byte2=Red.
+# idx : file(B G R) -> RGB(r,g,b)  ~name
+
+  0 : 00 00 00 -> rgb(  0,  0,  0)  black/off
+  1 : 3F 3F 3F -> rgb( 63, 63, 63)  white/gray
+  2 : 7F 7F 7F -> rgb(127,127,127)  white/gray
+  3 : FF FF FF -> rgb(255,255,255)  white/gray
+  4 : 3F 3F FF -> rgb(255, 63, 63)  red
+  5 : 00 00 FF -> rgb(255,  0,  0)  red
+  6 : 00 00 7F -> rgb(127,  0,  0)  red
+  7 : 00 00 3F -> rgb( 63,  0,  0)  red
+  8 : 6F BF FF -> rgb(255,191,111)  yellow/lime
+  9 : 00 3F FF -> rgb(255, 63,  0)  red
+ 10 : 00 1F 7F -> rgb(127, 31,  0)  red
+ 11 : 00 0F 3F -> rgb( 63, 15,  0)  red
+ 12 : 2F AF FF -> rgb(255,175, 47)  yellow/lime
+ 13 : 00 FF FF -> rgb(255,255,  0)  yellow/lime
+ 14 : 00 7F 7F -> rgb(127,127,  0)  yellow/lime
+ 15 : 00 3F 3F -> rgb( 63, 63,  0)  yellow/lime
+ 16 : 2F FF 7F -> rgb(127,255, 47)  green
+ 17 : 00 FF 4F -> rgb( 79,255,  0)  green
+ 18 : 00 7F 2F -> rgb( 47,127,  0)  green
+ 19 : 00 3F 17 -> rgb( 23, 63,  0)  green
+ 20 : 3F FF 4F -> rgb( 79,255, 63)  green
+ 21 : 00 FF 00 -> rgb(  0,255,  0)  green
+ 22 : 00 7F 00 -> rgb(  0,127,  0)  green
+ 23 : 00 3F 00 -> rgb(  0, 63,  0)  green
+ 24 : 4F FF 4F -> rgb( 79,255, 79)  green
+ 25 : 1F FF 00 -> rgb(  0,255, 31)  green
+ 26 : 0F 7F 00 -> rgb(  0,127, 15)  green
+ 27 : 07 3F 00 -> rgb(  0, 63,  7)  green
+ 28 : 5F FF 4F -> rgb( 79,255, 95)  green
+ 29 : 5F FF 00 -> rgb(  0,255, 95)  green
+ 30 : 2F 7F 00 -> rgb(  0,127, 47)  green
+ 31 : 17 3F 00 -> rgb(  0, 63, 23)  green
+ 32 : BF FF 4F -> rgb( 79,255,191)  cyan/teal
+ 33 : 9F FF 00 -> rgb(  0,255,159)  cyan/teal
+ 34 : 4F 7F 00 -> rgb(  0,127, 79)  cyan/teal
+ 35 : 27 3F 00 -> rgb(  0, 63, 39)  cyan/teal
+ 36 : FF BF 4F -> rgb( 79,191,255)  cyan/teal
+ 37 : FF AF 00 -> rgb(  0,175,255)  cyan/teal
+ 38 : 7F 57 00 -> rgb(  0, 87,127)  cyan/teal
+ 39 : 3F 2F 00 -> rgb(  0, 47, 63)  cyan/teal
+ 40 : FF 7F 4F -> rgb( 79,127,255)  blue
+ 41 : FF 57 00 -> rgb(  0, 87,255)  blue
+ 42 : 7F 2F 00 -> rgb(  0, 47,127)  blue
+ 43 : 3F 17 00 -> rgb(  0, 23, 63)  blue
+ 44 : FF 1F 2F -> rgb( 47, 31,255)  blue
+ 45 : FF 00 00 -> rgb(  0,  0,255)  blue
+ 46 : 7F 00 00 -> rgb(  0,  0,127)  blue
+ 47 : 3F 00 00 -> rgb(  0,  0, 63)  blue
+ 48 : FF 3F 5F -> rgb( 95, 63,255)  blue
+ 49 : FF 00 2F -> rgb( 47,  0,255)  blue
+ 50 : 7F 00 17 -> rgb( 23,  0,127)  blue
+ 51 : 3F 00 0F -> rgb( 15,  0, 63)  blue
+ 52 : FF 3F FF -> rgb(255, 63,255)  magenta/pink
+ 53 : FF 00 FF -> rgb(255,  0,255)  magenta/pink
+ 54 : 7F 00 7F -> rgb(127,  0,127)  magenta/pink
+ 55 : 3F 00 3F -> rgb( 63,  0, 63)  magenta/pink
+ 56 : 6F 3F FF -> rgb(255, 63,111)  red
+ 57 : 4F 00 FF -> rgb(255,  0, 79)  red
+ 58 : 2F 00 7F -> rgb(127,  0, 47)  red
+ 59 : 1F 00 3F -> rgb( 63,  0, 31)  red
+ 60 : 00 0F FF -> rgb(255, 15,  0)  red
+ 61 : 00 3F 9F -> rgb(159, 63,  0)  red
+ 62 : 00 4F 7F -> rgb(127, 79,  0)  yellow/lime
+ 63 : 00 2F 2F -> rgb( 47, 47,  0)  yellow/lime
+ 64 : 00 3F 00 -> rgb(  0, 63,  0)  green
+ 65 : 1F 3F 00 -> rgb(  0, 63, 31)  green
+ 66 : 6F 1F 00 -> rgb(  0, 31,111)  blue
+ 67 : FF 00 00 -> rgb(  0,  0,255)  blue
+ 68 : 3F 3F 00 -> rgb(  0, 63, 63)  cyan/teal
+ 69 : BF 00 1F -> rgb( 31,  0,191)  blue
+ 70 : 4F 3F 5F -> rgb( 95, 63, 79)  white
+ 71 : 17 0F 1F -> rgb( 31, 15, 23)  white/gray
+ 72 : 00 00 FF -> rgb(255,  0,  0)  red
+ 73 : 2F FF BF -> rgb(191,255, 47)  yellow/lime
+ 74 : 00 EF AF -> rgb(175,239,  0)  yellow/lime
+ 75 : 00 FF 5F -> rgb( 95,255,  0)  green
+ 76 : 00 7F 0F -> rgb( 15,127,  0)  green
+ 77 : 5F FF 00 -> rgb(  0,255, 95)  green
+ 78 : FF 9F 00 -> rgb(  0,159,255)  cyan/teal
+ 79 : FF 2F 00 -> rgb(  0, 47,255)  blue
+ 80 : FF 00 1F -> rgb( 31,  0,255)  blue
+ 81 : EF 00 5F -> rgb( 95,  0,239)  blue
+ 82 : 7F 1F AF -> rgb(175, 31,127)  magenta/pink
+ 83 : 00 0F 2F -> rgb( 47, 15,  0)  red
+ 84 : 00 2F FF -> rgb(255, 47,  0)  red
+ 85 : 00 DF 7F -> rgb(127,223,  0)  yellow/lime
+ 86 : 1F FF 6F -> rgb(111,255, 31)  green
+ 87 : 00 FF 00 -> rgb(  0,255,  0)  green
+ 88 : 2F FF 3F -> rgb( 63,255, 47)  green
+ 89 : 6F EF 5F -> rgb( 95,239,111)  green
+ 90 : CF FF 3F -> rgb( 63,255,207)  cyan/teal
+ 91 : FF 8F 5F -> rgb( 95,143,255)  cyan/teal
+ 92 : CF 4F 2F -> rgb( 47, 79,207)  blue
+ 93 : DF 4F 6F -> rgb(111, 79,223)  blue
+ 94 : FF 1F DF -> rgb(223, 31,255)  magenta/pink
+ 95 : 5F 00 FF -> rgb(255,  0, 95)  red
+ 96 : 00 4F FF -> rgb(255, 79,  0)  red
+ 97 : 00 AF BF -> rgb(191,175,  0)  yellow/lime
+ 98 : 00 FF 8F -> rgb(143,255,  0)  yellow/lime
+ 99 : 00 5F 7F -> rgb(127, 95,  0)  yellow/lime
+100 : 00 2F 3F -> rgb( 63, 47,  0)  yellow/lime
+101 : 0F 47 00 -> rgb(  0, 71, 15)  green
+102 : 1F 4F 0F -> rgb( 15, 79, 31)  green
+103 : 2F 17 17 -> rgb( 23, 23, 47)  blue
+104 : 5F 1F 17 -> rgb( 23, 31, 95)  blue
+105 : 17 37 5F -> rgb( 95, 55, 23)  yellow/lime
+106 : 00 00 7F -> rgb(127,  0,  0)  red
+107 : 2F 3F DF -> rgb(223, 63, 47)  red
+108 : 0F 47 DF -> rgb(223, 71, 15)  red
+109 : 1F BF FF -> rgb(255,191, 31)  yellow/lime
+110 : 2F DF 9F -> rgb(159,223, 47)  yellow/lime
+111 : 0F AF 6F -> rgb(111,175, 15)  yellow/lime
+112 : 2F 17 17 -> rgb( 23, 23, 47)  blue
+113 : 6F DF DF -> rgb(223,223,111)  yellow/lime
+114 : 8F EF 7F -> rgb(127,239,143)  white
+115 : FF 9F 9F -> rgb(159,159,255)  white
+116 : FF 6F 8F -> rgb(143,111,255)  magenta/pink
+117 : 3F 3F 3F -> rgb( 63, 63, 63)  white/gray
+118 : 6F 6F 6F -> rgb(111,111,111)  white/gray
+119 : FF FF DF -> rgb(223,255,255)  white
+120 : 00 00 9F -> rgb(159,  0,  0)  red
+121 : 00 00 37 -> rgb( 55,  0,  0)  red
+122 : 00 CF 17 -> rgb( 23,207,  0)  green
+123 : 00 3F 00 -> rgb(  0, 63,  0)  green
+124 : 00 AF BF -> rgb(191,175,  0)  yellow/lime
+125 : 00 2F 3F -> rgb( 63, 47,  0)  yellow/lime
+126 : 00 4F AF -> rgb(175, 79,  0)  red
+127 : 00 0F 4F -> rgb( 79, 15,  0)  red

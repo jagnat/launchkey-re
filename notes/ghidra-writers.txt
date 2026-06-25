@@ -1,0 +1,103 @@
+# functions referencing LED color RAM
+
+  FUN_0800d8bc           @ 0800d8bc  68 bytes  refs=0x2000DF70 0x2000DF74 0x2000DF78 0x2000DF7C 
+  FUN_0800d900           @ 0800d900  132 bytes  refs=0x2000DF70 0x2000DF74 
+  FUN_0800d984           @ 0800d984  14 bytes  refs=0x2000DF70 
+
+===== DECOMPILATIONS (unknown referencing fns) =====
+
+/* ===== FUN_0800d8bc @ 0800d8bc  refs=0x2000DF70 0x2000DF74 0x2000DF78 0x2000DF7C  ===== */
+
+void FUN_0800d8bc(undefined4 param_1)
+
+{
+  undefined1 *puVar1;
+  uint *puVar2;
+  int iVar3;
+  uint uVar4;
+  
+  puVar1 = DAT_0800d9a0;
+  if (DAT_0800d9a0[2] != '\0') {
+    DAT_0800d9a0[2] = 0;
+    return;
+  }
+  *(undefined4 *)(DAT_0800d9a0 + 0x24) = *(undefined4 *)(DAT_0800d9a0 + 4);
+  *(undefined4 *)(puVar1 + 0x28) = *(undefined4 *)(puVar1 + 8);
+  *(undefined4 *)(puVar1 + 0x4c) = param_1;
+  *(undefined4 *)(puVar1 + 0x2c) = *(undefined4 *)(puVar1 + 0xc);
+  *puVar1 = 1;
+  puVar2 = DAT_0800d9a4;
+  iVar3 = *(int *)(puVar1 + 0x44);
+  uVar4 = iVar3 + 1U & 7;
+  *(uint *)(puVar1 + 0x44) = uVar4;
+  *puVar2 = (uint)*(ushort *)(&LAB_0800d9c4 + uVar4 * 2) << 0x10;
+  *puVar2 = (uint)*(ushort *)(&DAT_0800d9b4 + uVar4 * 2);
+  *(int *)(puVar1 + 0x48) = iVar3;
+  return;
+}
+
+
+/* ===== FUN_0800d900 @ 0800d900  refs=0x2000DF70 0x2000DF74  ===== */
+
+void FUN_0800d900(void)
+
+{
+  int iVar1;
+  char *pcVar2;
+  int iVar3;
+  uint *puVar4;
+  undefined4 *puVar5;
+  int iVar6;
+  uint uVar7;
+  int iVar8;
+  
+  pcVar2 = DAT_0800d9a0;
+  iVar6 = *(int *)(DAT_0800d9a0 + 0x50);
+  if (*DAT_0800d9a0 != '\0') {
+    *DAT_0800d9a0 = '\0';
+    iVar3 = DAT_0800d9a8;
+    uVar7 = 0;
+    do {
+      iVar1 = uVar7 * 4;
+      iVar8 = uVar7 + *(int *)(pcVar2 + 0x48) * 8;
+      uVar7 = uVar7 + 1;
+      *(uint *)(iVar3 + iVar8 * 4) =
+           (*(uint *)(pcVar2 + iVar1 + 0x24) & 0xfff) + *(int *)(pcVar2 + 0x4c) * 0x10000;
+    } while (uVar7 < 8);
+    if (iVar6 != 0) {
+      iVar6 = iVar6 + -1;
+    }
+  }
+  if ((pcVar2[1] != '\0') && (iVar6 == 0)) {
+    pcVar2[2] = '\x01';
+    puVar4 = DAT_0800d9ac;
+    *DAT_0800d9ac = *DAT_0800d9ac & 0xfffffffe;
+    puVar5 = DAT_0800d9b0;
+    DAT_0800d9b0[2] = DAT_0800d9b0[2] & 0xfffffffe;
+    puVar5[5] = pcVar2 + 4;
+    puVar5[3] = puVar5[3] & 0xffff0000 | 3;
+    *puVar5 = 0x3d;
+    puVar5[2] = puVar5[2] | 1;
+    *puVar4 = *puVar4 | 1;
+    *puVar4 = *puVar4 | 0x40000000;
+    iVar6 = 0xff;
+  }
+  *(int *)(pcVar2 + 0x50) = iVar6;
+  return;
+}
+
+
+/* ===== FUN_0800d984 @ 0800d984  refs=0x2000DF70  ===== */
+
+void FUN_0800d984(void)
+
+{
+  int iVar1;
+  
+  iVar1 = DAT_0800d9a0;
+  *(undefined4 *)(DAT_0800d9a0 + 0x50) = 0;
+  *(undefined1 *)(iVar1 + 2) = 1;
+  *(undefined1 *)(iVar1 + 1) = 1;
+  return;
+}
+

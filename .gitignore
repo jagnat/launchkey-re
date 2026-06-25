@@ -1,0 +1,18 @@
+# Build products / large rebuildables
+.venv/
+build/
+captures/
+.DS_Store
+**/.DS_Store
+
+# Ghidra project: the .rep blob is a build product, rebuildable from
+# firmware/*.bin + re/symbols.tsv via ImportSymbols. Keep .gpr for convenience.
+tools/ghidra_proj/*.rep/
+tools/ghidra_proj/*.lock
+tools/ghidra_proj/*.ghidra
+
+# Big flat disassembly (regenerate via objdump; see notes/05)
+firmware/app_v1.2.thumb.asm
+
+# vendored upstream clone (reference only)
+tools/xkey/

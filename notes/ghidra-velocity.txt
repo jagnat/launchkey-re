@@ -1,0 +1,102 @@
+# functions reading velocity LUT @0x0801A158..0x0801A358
+  FUN_08012608 @ 08012608  (84 b)
+
+# callers of those:
+  FUN_080126fc @ 080126fc -> FUN_08012608
+  FUN_0801267c @ 0801267c -> FUN_08012608
+
+===== DECOMPILATIONS (velocity users + callers) =====
+
+/* ===== FUN_08012608 @ 08012608
+   RAMrefs=0x20002128 0x2000212A 
+   LUTregionrefs=0x0801A158  ===== */
+
+void FUN_08012608(void)
+
+{
+  byte *pbVar1;
+  undefined4 uVar2;
+  undefined4 in_r3;
+  int iVar3;
+  
+  pbVar1 = DAT_080127d8;
+  if (*DAT_080127d8 < 3) {
+    iVar3 = DAT_080127dc + (uint)*DAT_080127d8 * 0x100;
+    thunk_FUN_0800f8e0(1,iVar3,0x80);
+    uVar2 = 0x80;
+    iVar3 = iVar3 + 0x80;
+  }
+  else {
+    thunk_FUN_0800f8e0(1,0,0);
+    uVar2 = 0;
+    iVar3 = 0;
+  }
+  thunk_FUN_0800f8e0(2,iVar3,uVar2);
+  if (pbVar1[2] < 3) {
+    uVar2 = 0x80;
+    iVar3 = DAT_080127e0 + (uint)pbVar1[2] * 0x80;
+  }
+  else {
+    uVar2 = 0;
+    iVar3 = 0;
+  }
+  thunk_FUN_0800f8e0(3,iVar3,uVar2,in_r3);
+  return;
+}
+
+
+/* ===== FUN_080126fc @ 080126fc
+   RAMrefs=0x20002128 0x2000212A 
+   LUTregionrefs= ===== */
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void FUN_080126fc(uint param_1)
+
+{
+  undefined1 *puVar1;
+  uint uVar2;
+  int iVar3;
+  
+  if (3 < param_1) {
+    param_1 = 3;
+  }
+  *(char *)(DAT_080127d8 + 2) = (char)param_1;
+  FUN_08012608();
+  puVar1 = DAT_0800cf98;
+  for (uVar2 = 0; uVar2 < *(uint *)(DAT_0800cf98 + 0xc); uVar2 = uVar2 + 1) {
+    iVar3 = _DAT_0800cf9c + uVar2 * 0x10;
+    if (*(int *)(iVar3 + 4) == DAT_080127e4) goto LAB_0800cee6;
+  }
+  FUN_0800cebc(DAT_080127e4,0x7e);
+  iVar3 = 0;
+LAB_0800cee6:
+  *(byte *)(iVar3 + 0xf) = *(byte *)(iVar3 + 0xf) | 1;
+  *puVar1 = 1;
+  return;
+}
+
+
+/* ===== FUN_0801267c @ 0801267c
+   RAMrefs=0x20002129 0x2000212B 0x2000212C 0x2000212D 0x2000212E 0x20002136 
+   LUTregionrefs= ===== */
+
+void FUN_0801267c(void)
+
+{
+  int iVar1;
+  
+  FUN_08012608();
+  FUN_0801265c();
+  iVar1 = DAT_080127d8;
+  FUN_08011616(0,*(char *)(DAT_080127d8 + 1) != '\0');
+  FUN_0801250e(*(undefined1 *)(iVar1 + 3));
+  if (*(byte *)(iVar1 + 4) < 3) {
+    thunk_FUN_0800f988(0xfff0,*(undefined2 *)(&DAT_080127f0 + (uint)*(byte *)(iVar1 + 4) * 2));
+  }
+  FUN_0800b842(*(char *)(iVar1 + 5) != '\0');
+  FUN_0800cc24(*(char *)(iVar1 + 6) != '\0');
+  FUN_080143e2(*(char *)(iVar1 + 0xe) != '\0');
+  return;
+}
+

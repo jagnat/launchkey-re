@@ -1,0 +1,24 @@
+# byte-stores to [reg,#0xf]
+
+  0800ce6c  strb r3,[r1,#0xf]               in FUN_0800ce3c  src_imm=0x0 (0)
+  0800ceec  strb r0,[r5,#0xf]               in FUN_0800bc2c  src_imm=0x0 (0)
+  0800cf70  strb r1,[r4,#0xf]               in FUN_0800cef4  src_imm=?
+  0800fb84  strb r0,[r1,#0xf]               in FUN_0800fb24  src_imm=0x20 (32)
+  08010a88  strb.w r2,[sp,#0xf]             in FUN_08010b86  src_imm=0x0 (0)
+  08010aee  strb.w r2,[sp,#0xf]             in FUN_08010b86  src_imm=0x7f (127)
+  08011016  strb r0,[r4,#0xf]               in FUN_08010fe2  src_imm=0xff (255)
+  08011122  strb r1,[r0,#0xf]               in FUN_0801111e  src_imm=0x0 (0)
+  0801617e  strb r0,[r5,#0xf]               in FUN_08015ff4  src_imm=0x8 (8)
+  08016202  strb r1,[r5,#0xf]               in FUN_08015ff4  src_imm=?
+  080197a4  strb.w r0,[sp,#0xf]             in FUN_080195bc  src_imm=?
+
+# candidate functions (9):
+  FUN_0800ce3c @ 0800ce3c (58b)
+  FUN_0800bc2c @ 0800bc2c (174b)
+  FUN_0800cef4 @ 0800cef4 (130b)
+  FUN_0800fb24 @ 0800fb24 (120b)
+  FUN_08010b86 @ 08010b86 (352b)
+  FUN_08010fe2 @ 08010fe2 (206b)
+  FUN_0801111e @ 0801111e (12b)
+  FUN_08015ff4 @ 08015ff4 (1082b)
+  FUN_080195bc @ 080195bc (692b)

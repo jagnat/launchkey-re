@@ -1,0 +1,7 @@
+# addr	name	type	len
+0x080127F0	g_settings_subtable_127f0	undefined	1
+0x0801A158	g_velocity_curves	undefined	1
+0x0801C250	g_color_palette	undefined4	4
+0x20002128	g_settings	?	0
+0x20003868	g_led_descriptors	?	0
+0x2000AE40	g_led_rgb_buffer	?	0
