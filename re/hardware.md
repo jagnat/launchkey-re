@@ -35,21 +35,29 @@ notes 09–10 (8×16 BCM LED matrix + key/button scan), now pinned to specific p
 |---|---|---|---|---|
 | **drive** | `GPIOB->BSRR` | 0x40020418 | ★ strobe matrix lines (set/reset) | `FUN_08009878`, `FUN_0800d992` |
 | **drive** | `GPIOA->BSRR` | 0x40020018 | ★ strobe matrix lines | `FUN_0800d2e0` region |
-| **read**  | `GPIOC->IDR`  | 0x40020810 | ★ **sense key/button columns** | `FUN_0800da4c` |
-| **timebase** | `TIM1->SR`  | 0x40010010 | ★ scan/PWM interrupt flag | `FUN_08009878` |
-| also | GPIOA/C base | — | row/column address + LED data | `FUN_08009878` |
+| **read**  | `GPIOC->IDR`  | 0x40020810 | ★ **sense key/button columns** | `key_columns_read` |
+| **timebase** | `TIM1->SR`  | 0x40010010 | ★ scan/PWM interrupt flag | `led_key_matrix_scan_isr` |
 
-So: **TIM1 fires → an ISR strobes a row via GPIOA/B BSRR → reads the column state via
-GPIOC IDR → updates the LED bitplanes (BCM) and queues key/button events.** GPIOD is
-also touched in init (extra rows/columns or LED enables).
+So: **TIM1 fires → `led_key_matrix_scan_isr` strobes a row via GPIOA/B BSRR → reads the
+column state via `key_columns_read` (GPIOC IDR) → updates the LED bitplanes (BCM) and
+queues key/button events.** GPIOD is also touched in init.
 
-Driver-function candidates (promote to `symbols.tsv` once confirmed by reading):
-- `FUN_08009878` → ☆ `matrix_scan_step` (writes GPIO BSRR, reads TIM1 SR)
-- `FUN_0800da4c` → ☆ `key_column_read` (reads GPIOC IDR)
-- `FUN_08009d94` → ☆ `tim1_pwm_setup` (TIM1 base + RCR)
-- `FUN_08008e6c` → ☆ `gpio_init_all` (loads every GPIO base; the MspInit/pin config)
-- (cf. note 09's `led_key_matrix_scan_isr` @0x080095A8 — relate these; the BSRR/IDR
-  work may live in helpers it calls.)
+Confirmed drivers (SVD pass, register-proven — now in `symbols.tsv`):
+| function | registers it touches | role |
+|---|---|---|
+| `led_key_matrix_scan_isr` @080095A8 | GPIOA_BSRR, GPIOB_BSRR, TIM1_SR | ★ matrix scan ISR (row drive + tick) |
+| `key_columns_read` @0800D9D8 | GPIOC_IDR | ★ read key/button column inputs |
+| `matrix_row_drive` @0800D8BC | GPIOB_BSRR | ☆ row/column strobe helper |
+| `matrix_pin_reconfig` @080093EA | GPIOA/C_MODER | ☆ flip pins in/out during mux |
+| `key_event_scan` @08009878 | GPIOA/C_MODER | ☆ key index → state flags |
+| `key_debounce` @0800DA4C | (state machine) | ☆ two-contact debounce/velocity |
+| `peripheral_init_all` @080083BC | all GPIO_MODER, ADC1, SPI1, TIM1 | ★ CubeMX-style init aggregator |
+| `timers_init_all` @08009D94 | TIM1..11 CR1, TIM1_RCR | ★ start all timers |
+| `systemclock_config` @0800DBD4 | RCC CR/PLLCFGR/CFGR | ★ PLL/clock setup |
+| `adc_dma_driver` @0800D900 | ADC1_CR2, DMA2 | ☆ touch-strip sampling |
+| `spi1_dma_driver` @0800953E | SPI1_CR1, DMA1/2 | ☆ SPI1 + DMA stream |
+
+Use `q.py reg <REG>` (e.g. `q.py reg BSRR`) to re-derive which functions touch a register.
 
 ## Analog & comms (lower confidence, worth a look)
 - **ADC1** → ☆ pitch/mod **touch strips** (the Mini MK3's two touch sliders). Confirm by

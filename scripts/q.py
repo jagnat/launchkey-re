@@ -10,6 +10,7 @@ Usage:
   q.py callees <name|addr>  what it calls
   q.py xref <0xADDR>        every reference TO an address (e.g. a data/table addr)
   q.py grep <regex>         search function names + signatures
+  q.py reg <name>           which functions touch a register (e.g. GPIOC_IDR, BSRR)
   q.py str <regex>          search strings
   q.py addr <0xADDR>        identify the function/data at or containing an address
 """
@@ -103,6 +104,32 @@ def cmd_str(pat):
         if rx.search(r[1]):
             print(f"{r[0]}  {r[1]}")
 
+def cmd_reg(pat):
+    """Which functions reference a register/symbol name (e.g. GPIOC_IDR, BSRR)."""
+    rx = re.compile(pat, re.I)
+    spans = []
+    for r in rows("functions.tsv"):
+        spans.append((int(r[5]), int(r[5]) + int(r[6]), r[1]))
+    spans.sort()
+    def fn_at(line):
+        for s, e, n in spans:
+            if s <= line < e:
+                return n
+            if s > line:
+                break
+        return "?"
+    from collections import defaultdict
+    hits = defaultdict(set)
+    p = os.path.join(RE, "firmware.c")
+    for i, line in enumerate(open(p), 1):
+        for m in re.finditer(r'([A-Z][A-Z0-9]+_[A-Z0-9]+)', line):
+            if rx.search(m.group(1)):
+                hits[fn_at(i)].add(m.group(1))
+    for fn, regs in sorted(hits.items(), key=lambda x: -len(x[1])):
+        print(f"{fn:24s} {' '.join(sorted(regs))}")
+    if not hits:
+        print("(no matches; register names live in firmware.c after the SVD pass)")
+
 def cmd_addr(tok):
     a = int(tok, 16)
     best = None
@@ -124,6 +151,7 @@ def main():
      "callers": lambda t: cmd_dir(t, True),
      "callees": lambda t: cmd_dir(t, False),
      "xref": cmd_xref, "grep": cmd_grep, "str": cmd_str, "addr": cmd_addr,
+     "reg": cmd_reg,
      }.get(c, lambda _: sys.exit(__doc__))(arg)
 
 if __name__ == "__main__":

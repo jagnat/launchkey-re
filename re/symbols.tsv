@@ -1,7 +1,17 @@
 # Launchkey Mini MK3 v1.2 (build461) firmware — symbol map / RE checkpoint
 # Source of truth for names. Edit here or in Ghidra; ImportSymbols replays this.
 # addr	kind	name
+0x080083BC	func	peripheral_init_all
+0x080093EA	func	matrix_pin_reconfig
+0x0800953E	func	spi1_dma_driver
 0x080095A8	func	led_key_matrix_scan_isr
+0x08009878	func	key_event_scan
+0x08009D94	func	timers_init_all
+0x0800D8BC	func	matrix_row_drive
+0x0800D900	func	adc_dma_driver
+0x0800D9D8	func	key_columns_read
+0x0800DA4C	func	key_debounce
+0x0800DBD4	func	systemclock_config
 0x08012608	func	velocity_curve_apply
 0x0801267C	func	settings_apply_all
 0x080126FC	func	velocity_curve_set

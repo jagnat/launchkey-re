@@ -28,6 +28,13 @@ Dense, high-confidence facts so we don't re-derive. Confidence: ★=verified,
 | `0x20003868` | `g_led_descriptors` | ★ | 16 B each; `+0x0f` = palette index (notes 12/16) |
 | `0x2000AE40` | `g_led_rgb_buffer` | ★ | physical per-LED RGB the ISR shifts out |
 
+**Hardware drivers (SVD-proven, see `hardware.md`):** `peripheral_init_all`@080083BC,
+`timers_init_all`@08009D94, `systemclock_config`@0800DBD4, `key_columns_read`@0800D9D8
+(GPIOC_IDR), `matrix_row_drive`@0800D8BC (GPIOB_BSRR), `matrix_pin_reconfig`@080093EA,
+`key_event_scan`@08009878, `key_debounce`@0800DA4C, `adc_dma_driver`@0800D900 (touch
+strips), `spi1_dma_driver`@0800953E. Registers labeled in `firmware.c` via `LoadSvd.java`
++ `ApplyMmioPointers.java`; query with `q.py reg <REG>`.
+
 ## `g_settings` @ 0x20002128 (the thread into musical features)
 Pointer used in code as `DAT_080127d8`. Known fields (offset from base):
 | off | meaning | conf |
