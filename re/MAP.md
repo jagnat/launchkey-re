@@ -45,6 +45,21 @@ Pointer used in code as `DAT_080127d8`. Known fields (offset from base):
 | `+4` | indexes `g_settings_subtable_127f0` (<3) | ☆ |
 → **Next:** decode the remaining fields by reading each `settings_apply_all` callee.
 
+## USB-MIDI RX path (note 19) — the musical-engine gateway
+Source modules (from kept `__FILE__` strings): `inputmidi_listener.c`@0x08011xxx,
+`midiobj_backend.c`@0x08014xxx. USB ports: MIDI Port / DAW Port / "MIDI Int" (InControl).
+| symbol | addr | role |
+|---|---|---|
+| `midi_in_router` | `0x0800C0C6` | ★ parse+dispatch incoming MIDI → 12 type handlers (17 callees) |
+| `midi_in_publish` | `0x080116A4` | ★ fan-out event to listeners (all 12 handlers call it) |
+| `midi_note_state_get`/`set` | `0x0800CDCC`/`0x0800CDF8` | ★ read/write MIDI note state (27 callers) |
+| `g_midi_note_value_ptr` | `0x0801531C` | ★ 16ch×128×2B 14-bit value table (`&0x3fff`) |
+| `g_midi_note_state_ptr` | `0x08015320` | ★ 16ch×128×1B note on/off+vel |
+| `g_note_active_matrix_ptr` | `0x08016C00` | ☆ held-note set (arp input), engine 0x08016xxx |
+| 12 handlers | `FUN_0801179c…0801215a` | ? one per message type (note-on/off/CC/pitchbend) — not yet split |
+| `FUN_0800C238`/`C2D6` | — | ☆ the two input feeds (USB vs DAW) |
+| MIDI-out builders (`…|0x90`) | `FUN_0801bbec`,`FUN_0801acf0`,`FUN_08017940` | ☆ engine emitting MIDI (capture target) |
+
 ## Pointers / leads to chase (still `FUN_`/`DAT_`)
 | addr | role | conf |
 |---|---|---|
