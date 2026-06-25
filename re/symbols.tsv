@@ -1,6 +1,7 @@
 # Launchkey Mini MK3 v1.2 (build461) firmware — symbol map / RE checkpoint
 # Source of truth for names. Edit here or in Ghidra; ImportSymbols replays this.
 # addr	kind	name
+0x08008378	func	TIM2_IRQHandler
 0x080083BC	func	peripheral_init_all
 0x080093EA	func	matrix_pin_reconfig
 0x0800953E	func	spi1_dma_driver
@@ -15,6 +16,7 @@
 0x0800D9D8	func	key_columns_read
 0x0800DA4C	func	key_debounce
 0x0800DBD4	func	systemclock_config
+0x0800DC6C	func	assert_failed
 0x080116A4	func	midi_in_publish
 0x08012608	func	velocity_curve_apply
 0x0801267C	func	settings_apply_all
@@ -27,8 +29,49 @@
 0x0801A158	data	g_velocity_curves
 0x0801C250	data	g_color_palette
 0x0801CF14	func	SystemInit
+0x0801D0F0	func	NMI_Handler
+0x0801D0F2	func	HardFault_Handler
+0x0801D0F4	func	MemManage_Handler
+0x0801D0F6	func	BusFault_Handler
+0x0801D0F8	func	UsageFault_Handler
+0x0801D0FA	func	SVC_Handler
+0x0801D0FC	func	DebugMon_Handler
+0x0801D0FE	func	PendSV_Handler
+0x0801D100	func	SysTick_Handler
+0x0801D112	func	OTG_FS_IRQHandler
 0x0801D1E4	func	app_start
 0x0801D250	func	Reset_Handler
+0x0801D27C	func	PVD_IRQHandler
+0x0801D280	func	TAMP_STAMP_IRQHandler
+0x0801D284	func	RTC_WKUP_IRQHandler
+0x0801D288	func	FLASH_IRQHandler
+0x0801D28C	func	RCC_IRQHandler
+0x0801D290	func	EXTI0_IRQHandler
+0x0801D294	func	EXTI1_IRQHandler
+0x0801D298	func	EXTI2_IRQHandler
+0x0801D29C	func	EXTI3_IRQHandler
+0x0801D2A0	func	EXTI4_IRQHandler
+0x0801D2B0	func	ADC_IRQHandler
+0x0801D2B4	func	EXTI9_5_IRQHandler
+0x0801D2B8	func	TIM1_BRK_TIM9_IRQHandler
+0x0801D2BC	func	TIM1_TRG_COM_TIM11_IRQHandler
+0x0801D2C0	func	TIM1_CC_IRQHandler
+0x0801D2C4	func	TIM3_IRQHandler
+0x0801D2CC	func	I2C1_EV_IRQHandler
+0x0801D2D0	func	I2C1_ER_IRQHandler
+0x0801D2D4	func	I2C2_EV_IRQHandler
+0x0801D2D8	func	I2C2_ER_IRQHandler
+0x0801D2DC	func	SPI1_IRQHandler
+0x0801D2E0	func	SPI2_IRQHandler
+0x0801D2EC	func	EXTI15_10_IRQHandler
+0x0801D2F0	func	RTC_Alarm_IRQHandler
+0x0801D2F4	func	OTG_FS_WKUP_IRQHandler
+0x0801D2FC	func	SDIO_IRQHandler
+0x0801D304	func	SPI3_IRQHandler
+0x0801D31C	func	I2C3_EV_IRQHandler
+0x0801D320	func	I2C3_ER_IRQHandler
+0x0801D324	func	FPU_IRQHandler
+0x0801D328	func	SPI4_IRQHandler
 0x20002128	data	g_settings
 0x20003868	data	g_led_descriptors
 0x2000AE40	data	g_led_rgb_buffer

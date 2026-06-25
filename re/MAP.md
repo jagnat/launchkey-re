@@ -45,6 +45,18 @@ Pointer used in code as `DAT_080127d8`. Known fields (offset from base):
 | `+4` | indexes `g_settings_subtable_127f0` (<3) | ☆ |
 → **Next:** decode the remaining fields by reading each `settings_apply_all` callee.
 
+## Vector table / ISRs (scripts/scan_vectors.py)
+All exception + SVD-named IRQ handlers named in `symbols.tsv`. Cross-checks:
+- **TIM1_UP_TIM10_IRQHandler == `led_key_matrix_scan_isr`@080095A8** (the matrix scan
+  runs off TIM1) — independent confirmation of the LED/key engine.
+- **TIM2_IRQHandler**@08008378 = a real ISR (candidate **arp/tempo clock** — check when
+  chasing the arp engine).
+- Most other IRQ vectors point to weak default stubs in the `0x0801D2xx` cluster (unused
+  peripherals). The USB dispatch chain has **no static caller** → USB-MIDI is likely
+  **polled from the main loop**, not the OTG_FS IRQ (hypothesis).
+- `assert_failed`@0800DC6C = the `__FILE__`/line assert sink.
+Regenerate/extend with `scripts/scan_vectors.py`.
+
 ## USB-MIDI RX path (note 19) — the musical-engine gateway
 Source modules (from kept `__FILE__` strings): `inputmidi_listener.c`@0x08011xxx,
 `midiobj_backend.c`@0x08014xxx. USB ports: MIDI Port / DAW Port / "MIDI Int" (InControl).
