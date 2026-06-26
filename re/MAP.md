@@ -87,6 +87,24 @@ Note: `extdata_msd`=USB mass-storage (fw-update drive), `extdata_upn`=user-produ
 (focusrite register URL), `extdata_upgrade`=firmware upgrade. Big unnamed config funcs
 left: 0x080170F8 (1032B), 0x0801989A, 0x0800EC54 (MSD parser).
 
+## Musical engine — arp / scale / chord (notes 19-20)
+Arp engine @ `0x08013xxx`, **pad-configured** (no screen). Clocked by MIDI `0xF8`.
+| symbol | addr | role |
+|---|---|---|
+| `g_arp_rate_divisors` | `0x08013B10` | `[3,2,6,4,12,8,24,16]` = 1/32..1/4 straight/triplet tick divisors (24 PPQN) |
+| `arp_apply_rate` | `0x080137FE` | `rate*2+(straight?0:1)` → divisor → program clock → refresh LEDs |
+| `arp_rate_get`/`arp_triplet_get` | `0x080134C0`/`0x080134DE` | read rate index / triplet flag |
+| `arp_mode_select` | `0x08013B34` | pads 0x10-0x1f → pattern/dir/octave (+LED) |
+| `arp_page_render` | `0x08013508` | light 16 pads for the arp page (`DAT_08013b00`=cell colours) |
+| `arp_transport_start` | `0x0801391C` | MIDI start 0xFA → run |
+| `transport_button_handler` | `0x080133D4` | Play → MIDI start/stop |
+| `held_note_update` | `0x08016A44` | maintain held-note linked list (`DAT_08016bf0`), arp input |
+| `scale_chord_lookup` | `0x08016CC8` | 13-entry interval table → chord/scale note (called by note builder) |
+| `control_dispatch` | `0x0800C72C` | hub: routes control/button events to all feature handlers (22 callees) |
+| `midi_send`/`midi_out_forward` | `0x0800B3D0`/`0x0801BBEC` | raw MIDI out / forward+state |
+Sibling table `[2,4,6,8,8,32,6]`@`0x0801367E` = gate/swing? STEP GENERATOR (0xF8 →
+advance step, pick held note, pattern tables) still unnamed — the last arp piece.
+
 ## Pointers / leads to chase (still `FUN_`/`DAT_`)
 | addr | role | conf |
 |---|---|---|

@@ -20,6 +20,7 @@
 0x0800BB50	func	led_set_color
 0x0800BECC	func	control_value_get
 0x0800C0C6	func	midi_in_router
+0x0800C72C	func	control_dispatch
 0x0800CDCC	func	midi_note_state_get
 0x0800CDF8	func	midi_note_state_set
 0x0800D76A	func	confstore_flash_pump
@@ -36,8 +37,11 @@
 0x080126FC	func	velocity_curve_set
 0x080127F0	data	g_settings_subtable_127f0
 0x080133D4	func	transport_button_handler
+0x080134C0	func	arp_rate_get
+0x080134DE	func	arp_triplet_get
 0x08013508	func	arp_page_render
 0x08013718	func	arp_page_render_thunk
+0x080137FE	func	arp_apply_rate
 0x0801391C	func	arp_transport_start
 0x08013B10	data	g_arp_rate_divisors
 0x08013B34	func	arp_mode_select
@@ -47,10 +51,13 @@
 0x08015B94	func	confsys_init
 0x08015DAC	func	confsys_flash_pump
 0x08015FF4	func	confsys_obj_xfer
+0x08016A44	func	held_note_update
 0x08016C00	data	g_note_active_matrix_ptr
+0x08016CC8	func	scale_chord_lookup
 0x08017F14	func	extdata_flash_pump
 0x08018184	func	usb_otg_fs_isr
 0x0801A158	data	g_velocity_curves
+0x0801BBEC	func	midi_out_forward
 0x0801C250	data	g_color_palette
 0x0801CF14	func	SystemInit
 0x0801D0F0	func	NMI_Handler
