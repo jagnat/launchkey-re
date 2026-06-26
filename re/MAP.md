@@ -51,9 +51,11 @@ All exception + SVD-named IRQ handlers named in `symbols.tsv`. Cross-checks:
   runs off TIM1) — independent confirmation of the LED/key engine.
 - **TIM2_IRQHandler**@08008378 = a real ISR (candidate **arp/tempo clock** — check when
   chasing the arp engine).
+- **OTG_FS_IRQHandler → `usb_otg_fs_isr`@08018184** (1298 B, 24 callees) — USB **is**
+  interrupt-driven (earlier "polled" guess was wrong). USB device stack spans ~0x08015800
+  -0x08019xxx (physically interleaved with the `confstore`/`extdata` .c ranges).
 - Most other IRQ vectors point to weak default stubs in the `0x0801D2xx` cluster (unused
-  peripherals). The USB dispatch chain has **no static caller** → USB-MIDI is likely
-  **polled from the main loop**, not the OTG_FS IRQ (hypothesis).
+  peripherals).
 - `assert_failed`@0800DC6C = the `__FILE__`/line assert sink.
 Regenerate/extend with `scripts/scan_vectors.py`.
 
@@ -71,6 +73,19 @@ Source modules (from kept `__FILE__` strings): `inputmidi_listener.c`@0x08011xxx
 | 12 handlers | `FUN_0801179c…0801215a` | ? one per message type (note-on/off/CC/pitchbend) — not yet split |
 | `FUN_0800C238`/`C2D6` | — | ☆ the two input feeds (USB vs DAW) |
 | MIDI-out builders (`…|0x90`) | `FUN_0801bbec`,`FUN_0801acf0`,`FUN_08017940` | ☆ engine emitting MIDI (capture target) |
+
+## Config / storage stack (Tier-1 deep-dive)
+External **SPI NOR flash** (opcodes confirm it) holds config/custom-modes. Layered:
+| layer | symbol | role |
+|---|---|---|
+| SPI xfer | `spi1_xfer`@09502, `spi1_dma_driver`@0953E | SPI1 (+DMA) primitive |
+| flash HW (`serstor_hw.c`) | `serstor_flash_write_enable`@09E2C (WREN 0x06), `_erase`@09E98 (0xD8/0x20), `_write`@09F0C (0x02 page-prog), `_read`@09F60 (0x03), `_run`@09FBA (status-poll 0x05 + multi-page), `serstor_get_handle`@0A156 | SPI NOR driver |
+| region pumps | `confstore_flash_pump`@0D76A (erase 0x21000), `confsys_flash_pump`@15DAC, `extdata_flash_pump`@17F14 | per-region async op state machines (ctx[3]=cmd 2=erase/3=write/5=read) |
+| config sys (`confsys*.c`) | `config_init`@0DCC0, `confsys_init`@15B94 (boot load+validate, dual-bank CRC), `confsys_load_validate`@0A5B0, `confsys_obj_xfer`@15FF4 (vtable obj read/write) | config system |
+| external (`extdata_*.c`) | (mostly unnamed) | read/write config over SysEx/USB |
+Note: `extdata_msd`=USB mass-storage (fw-update drive), `extdata_upn`=user-product-number
+(focusrite register URL), `extdata_upgrade`=firmware upgrade. Big unnamed config funcs
+left: 0x080170F8 (1032B), 0x0801989A, 0x0800EC54 (MSD parser).
 
 ## Pointers / leads to chase (still `FUN_`/`DAT_`)
 | addr | role | conf |
