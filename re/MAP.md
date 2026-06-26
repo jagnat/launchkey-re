@@ -1,5 +1,11 @@
 # Firmware map — curated cheat-sheet (read this at session start)
 
+**Naming convention:** semantic names (e.g. `arp_step`, `note_active_get`) are
+identified roles. Names like `arp_3770` / `scale_6c8` / `midi_listener_1b46` are
+**module-prefixed placeholders** — the function is confirmed to live in that module
+(verified address range), but its precise role is not yet read. Upgrade these as read.
+
+
 Dense, high-confidence facts so we don't re-derive. Confidence: ★=verified,
 ☆=strong inference, ?=guess. Update when `symbols.tsv` grows.
 
