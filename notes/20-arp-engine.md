@@ -43,8 +43,24 @@ per the pattern/rate/octave and emits via the MIDI-out builders (`FUN_0801bbec` 
 - **Pattern/direction/octave:** selected in `arp_mode_select`; the pattern stepping logic
   is the next thing to read (find where the step index advances on each `0xF8`).
 
+## The step generator (found) — full loop traced
+`main_task_tick` @0x0800C914 (called from `peripheral_init_all` = the main scheduler)
+computes a time delta (`timer_elapsed` @0x080081AC, a 22-caller util), runs ~12
+subsystem update handlers, then decrements the arp countdown in `g_arp_state`
+(`DAT_08013AC8`, `+4` = step timer). When it expires → **`arp_step` @0x080138C0**:
+- advances the arp and **emits notes by re-injecting events back through the MIDI
+  router** (`thunk_FUN_0800c2d6` over indices 0..0x0f and 0x38..0x3f) — the arp's output
+  flows through the same dispatch as real input (elegant);
+- `arp_emit_note` @0x08012A42 handles the per-note arp output (note id + 0x80);
+- refreshes the pad LEDs (`arp_page_render`).
+
+So the **complete arp loop**: clock/tempo → `main_task_tick` → `g_arp_state+4` countdown
+→ `arp_step` → re-inject through `midi_in_router` → `midi_out_forward`. Rate set by
+`arp_apply_rate` from `g_arp_rate_divisors`; params by `arp_control_handler`
+(0x0801391C, renamed from the earlier "transport_start" guess).
+
 ## Status / next
-Located + named the arp control/UI + its rate table; coverage 80→88 functions
-(16.5% of code bytes). NEXT: the **step generator** — trace the `0xF8` clock consumer
-that advances the arp step and reads `g_note_active_matrix`, to fully expose pattern
-tables; then a `scripts/midi_capture.py` test (rate edit → measured note timing).
+Arp fully traced; coverage 80→99 functions (18.0% of code bytes). NEXT: expose the
+**pattern tables** (up/down/updown/random/played) inside `arp_step`/`arp_control_handler`
+param setters; then `scripts/midi_capture.py` (rate edit → measured note timing) to
+verify on hardware.

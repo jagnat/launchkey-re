@@ -1,6 +1,7 @@
 # Launchkey Mini MK3 v1.2 (build461) firmware — symbol map / RE checkpoint
 # Source of truth for names. Edit here or in Ghidra; ImportSymbols replays this.
 # addr	kind	name
+0x080081AC	func	timer_elapsed
 0x08008378	func	TIM2_IRQHandler
 0x080083BC	func	peripheral_init_all
 0x080093EA	func	matrix_pin_reconfig
@@ -21,6 +22,7 @@
 0x0800BECC	func	control_value_get
 0x0800C0C6	func	midi_in_router
 0x0800C72C	func	control_dispatch
+0x0800C914	func	main_task_tick
 0x0800CDCC	func	midi_note_state_get
 0x0800CDF8	func	midi_note_state_set
 0x0800D76A	func	confstore_flash_pump
@@ -36,13 +38,16 @@
 0x0801267C	func	settings_apply_all
 0x080126FC	func	velocity_curve_set
 0x080127F0	data	g_settings_subtable_127f0
+0x08012A42	func	arp_emit_note
 0x080133D4	func	transport_button_handler
 0x080134C0	func	arp_rate_get
 0x080134DE	func	arp_triplet_get
 0x08013508	func	arp_page_render
 0x08013718	func	arp_page_render_thunk
 0x080137FE	func	arp_apply_rate
-0x0801391C	func	arp_transport_start
+0x080138C0	func	arp_step
+0x0801391C	func	arp_control_handler
+0x08013AC8	data	g_arp_state_ptr
 0x08013B10	data	g_arp_rate_divisors
 0x08013B34	func	arp_mode_select
 0x080141C2	func	led_render_resolve_palette

@@ -1,7 +1,7 @@
 # addr	name	size	ncallers	ncallees	cline	nclines	signature
 0x08008198	FUN_08008198	12	19	0	4	14	void FUN_08008198(undefined4 *param_1,undefined4 *param_2);
 0x080081A4	FUN_080081a4	8	2	0	18	10	void FUN_080081a4(int *param_1);
-0x080081AC	FUN_080081ac	12	22	0	28	15	int FUN_080081ac(int *param_1,int *param_2);
+0x080081AC	timer_elapsed	12	22	0	28	15	int timer_elapsed(int *param_1,int *param_2);
 0x080081B8	FUN_080081b8	4	1	0	43	9	undefined4 FUN_080081b8(void);
 0x080081BC	FUN_080081bc	6	8	0	52	44	undefined4 * FUN_080081bc(undefined4 *param_1,uint param_2);
 0x080081C2	FUN_080081c2	4	1	0	96	9	undefined4 FUN_080081c2(void);
@@ -300,7 +300,7 @@
 0x0800C798	FUN_0800c798	78	0	10	7636	24	int FUN_0800c798(int param_1);
 0x0800C838	FUN_0800c838	152	1	25	7660	76	void FUN_0800c838(undefined4 param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4);
 0x0800C8D0	FUN_0800c8d0	108	1	8	7736	44	void FUN_0800c8d0(uint param_1);
-0x0800C914	FUN_0800c914	174	1	17	7780	63	undefined8 FUN_0800c914(void);
+0x0800C914	main_task_tick	174	1	17	7780	63	undefined8 main_task_tick(void);
 0x0800C9AC	FUN_0800c9ac	2	1	0	7843	9	void FUN_0800c9ac(void);
 0x0800C9DA	FUN_0800c9da	12	1	1	7852	14	void FUN_0800c9da(undefined4 param_1);
 0x0800C9E6	FUN_0800c9e6	52	2	2	7866	30	undefined4 FUN_0800c9e6(void);
@@ -700,7 +700,7 @@
 0x08012A32	FUN_08012a32	6	1	0	18592	10	void FUN_08012a32(undefined4 param_1);
 0x08012A38	FUN_08012a38	6	1	0	18602	10	void FUN_08012a38(undefined4 param_1);
 0x08012A3E	thunk_FUN_0800c2d6	4	5	0	18612	25	undefined4 thunk_FUN_0800c2d6(void);
-0x08012A42	FUN_08012a42	30	3	3	18637	21	void FUN_08012a42(undefined4 param_1);
+0x08012A42	arp_emit_note	30	3	3	18637	21	void arp_emit_note(undefined4 param_1);
 0x08012A60	FUN_08012a60	52	6	6	18658	25	void FUN_08012a60(undefined4 param_1);
 0x08012A94	FUN_08012a94	28	2	0	18683	11	undefined8 FUN_08012a94(void);
 0x08012AB0	FUN_08012ab0	22	3	1	18694	12	void FUN_08012ab0(char *param_1);
@@ -767,8 +767,8 @@
 0x08013872	FUN_08013872	2	2	0	20565	10	void FUN_08013872(void);
 0x08013874	FUN_08013874	6	7	1	20575	10	void FUN_08013874(void);
 0x0801387C	FUN_0801387c	62	1	3	20585	32	void FUN_0801387c(void);
-0x080138C0	FUN_080138c0	92	2	8	20617	38	void FUN_080138c0(void);
-0x0801391C	arp_transport_start	224	1	13	20655	113	void arp_transport_start(uint param_1);
+0x080138C0	arp_step	92	2	8	20617	38	void arp_step(void);
+0x0801391C	arp_control_handler	224	1	13	20655	113	void arp_control_handler(uint param_1);
 0x080139FC	FUN_080139fc	48	1	2	20768	31	void FUN_080139fc(int param_1);
 0x08013B1C	FUN_08013b1c	22	2	1	20799	16	undefined8 FUN_08013b1c(void);
 0x08013B34	arp_mode_select	320	3	5	20815	138	void arp_mode_select(void);
