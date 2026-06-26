@@ -1,5 +1,6 @@
 # addr	name	type	len
 0x080127F0	g_settings_subtable_127f0	undefined	1
+0x08013B10	g_arp_rate_divisors	undefined	1
 0x0801531C	g_midi_note_value_ptr	undefined4	4
 0x08015320	g_midi_note_state_ptr	undefined4	4
 0x08016C00	g_note_active_matrix_ptr	undefined4	4

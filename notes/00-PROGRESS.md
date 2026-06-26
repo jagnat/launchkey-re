@@ -24,6 +24,7 @@ This is the index. Each numbered note is a self-contained lesson covering both
 - [x] **17** Roadmap: efficient firmware modeling & extending (symbol recovery, Renode, MIDI-capture)
 - [x] **18** First offline musical-table find: **velocity curves** @0x0801a158 + full code path
 - [x] **19** USB-MIDI RX path mapped: router/publish/note-state tables (engine gateway)
+- [x] **20** Arp engine located (0x08013xxx): rate table @0x08013B10, pad-config UI
 - [ ] later: extend musical features (arp/scale/chord) per note 17; route B; custom C firmware
 - [ ] later: USB-MIDI RX path + InControl/DAW SysEx protocol
 - [ ] later: custom firmware (CubeMX project, linker @0x08008000, flashing)
