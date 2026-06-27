@@ -1,5 +1,24 @@
 # Firmware map — curated cheat-sheet (read this at session start)
 
+## Current status (Claude init — read first, keep updated each milestone)
+**Project goal:** PRIMARY = targeted firmware mods (LED/arp/scale/velocity), don't break
+things (reversible, validate no-flash first, never flash without go-ahead). ANCILLARY =
+full semantic map — grow coverage when convenient, never at the device's/mod's expense.
+**Last checkpoint (2026-06-27):** built device-in-the-loop MIDI harness
+`scripts/midi_capture.py`; HW-verified `g_arp_rate_divisors` 1/16-straight = 6
+clocks/step. See the "Device-in-the-loop" section below for harness usage + device facts.
+**Coverage:** 169/1233 funcs (13.7%) — only grow as a mod needs it.
+**Active task:** none committed; harness ready. Nothing flashed this session.
+**Next steps (device present, same one-capture method):**
+- Finish arp divisor table — 7 remaining rate/triplet cells of `[3,2,6,4,12,8,24,16]`.
+- Scale/chord interval table: enable Scale, play chromatic, capture quantized out →
+  validate `scale_chord_lookup`@`0x08016CC8`.
+- `midi_capture.py sysexscan` → map SysEx dispatcher (cand `0x0801B5B0`); read-only first.
+**Housekeeping:** `CLAUDE.md` + `re/MAP.md` not yet committed to git. SWD ruled out
+(no external test points; user won't open unit).
+
+---
+
 **Naming convention:** semantic names (e.g. `arp_step`, `note_active_get`) are
 identified roles. Names like `arp_3770` / `scale_6c8` / `midi_listener_1b46` are
 **module-prefixed placeholders** — the function is confirmed to live in that module
@@ -97,7 +116,7 @@ left: 0x080170F8 (1032B), 0x0801989A, 0x0800EC54 (MSD parser).
 Arp engine @ `0x08013xxx`, **pad-configured** (no screen). Clocked by MIDI `0xF8`.
 | symbol | addr | role |
 |---|---|---|
-| `g_arp_rate_divisors` | `0x08013B10` | `[3,2,6,4,12,8,24,16]` = 1/32..1/4 straight/triplet tick divisors (24 PPQN) |
+| `g_arp_rate_divisors` | `0x08013B10` | `[3,2,6,4,12,8,24,16]` = 1/32..1/4 straight/triplet tick divisors (24 PPQN). ★★ **HW-VERIFIED 2026-06-27**: 1/16-straight measured = 6 clocks/step (210/211 gaps) via `scripts/midi_capture.py arp` |
 | `arp_apply_rate` | `0x080137FE` | `rate*2+(straight?0:1)` → divisor → program clock → refresh LEDs |
 | `arp_rate_get`/`arp_triplet_get` | `0x080134C0`/`0x080134DE` | read rate index / triplet flag |
 | `arp_mode_select` | `0x08013B34` | pads 0x10-0x1f → pattern/dir/octave (+LED) |
@@ -119,6 +138,20 @@ advance step, pick held note, pattern tables) still unnamed — the last arp pie
 | `0x0800CEBC` | `led_desc_get_or_create` (used by velocity_curve_set) | ☆ |
 | `0x0800F8E0` | installs a transform LUT (called by velocity_curve_apply) | ☆ |
 | `DAT_0800CF98` | LED-descriptor manager: count `+0xc`, array ptr `_DAT_0800CF9C` | ☆ |
+
+## Device-in-the-loop (hardware validation) — `scripts/midi_capture.py`
+Black-box MIDI harness: drive + observe the live device at ms speed, NO flashing,
+fully reversible. Turns static hypotheses into measured facts (note 21).
+- **Routing:** standalone mode → keys/arp emit on **`MIDI Port` ch0**; DAW Port silent
+  unless InControl is enabled. Note-offs arrive as `note_on velocity=0`.
+- **Device free-runs MIDI clock (`0xF8`) on the MIDI Port even at idle** (120 BPM = 48
+  ticks/s, 24 PPQN) → arp step rate is directly countable in clocks, no host clock needed.
+- `midi_capture.py arp` counts `0xF8` between note-ons → reconstructs a divisor empirically.
+- Subcommands: `ports`, `monitor`, `send` (raw/`--sysex` auto-wraps `F0 00 20 29 … F7`),
+  `arp`, `sysexscan` (sweep SysEx cmd bytes, log responses → map the dispatcher).
+- Validation backlog: full arp table (other 7 rates), scale/chord interval table (enable
+  scale, play chromatic, capture quantized out), velocity curves (A/B the curve-select).
+- Seen but unmapped: `control_change ch16 cc103` from a transport/round button.
 
 ## Open TODO (offline)
 - [ ] SVD-Loader pass (`tools/svd/STM32F401.svd`) → register names in decompile.
