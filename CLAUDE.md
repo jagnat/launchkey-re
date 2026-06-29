@@ -50,6 +50,12 @@ This file is **stable**: it does not track current status. Live status lives in
   patch `.syx` bytes 6–7 after encoding (transfer CRC doesn't cover them).
 - App load base `0x08008000`. Use **Ghidra**, not rizin/objdump, on code/data-ambiguous
   regions (raw flat-map mis-parses Thumb literal pools).
+- **Ghidra headless** lives at `/opt/homebrew/Cellar/ghidra/12.1.2/libexec/support/
+  analyzeHeadless` and needs **Java 21** (`JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/
+  openjdk.jdk/Contents/Home`; system default `java` is 24 → Ghidra 12.1.2 rejects it). If a
+  prior run cached scripts under Java 24 you'll hit `UnsupportedClassVersionError (class file
+  68 vs 65)` — fix by clearing `~/Library/ghidra/ghidra_12.1.2_PUBLIC/osgi/compiled-bundles/*`
+  so it recompiles the `.java` under 21.
 
 ## Keeping context small (the point of this layout)
 

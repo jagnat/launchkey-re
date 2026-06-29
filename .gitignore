@@ -16,3 +16,5 @@ firmware/app_v1.2.thumb.asm
 
 # vendored upstream clone (reference only)
 tools/xkey/
+__pycache__/
+*.pyc
