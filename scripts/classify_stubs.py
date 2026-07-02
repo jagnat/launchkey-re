@@ -29,6 +29,10 @@ SYM = os.path.join(ROOT, "re/symbols.tsv")
 SRC = os.path.join(ROOT, "re/firmware.c")
 KW = {"if", "for", "while", "switch", "return", "do", "sizeof"}
 CALL = re.compile(r"\b([A-Za-z_]\w*)\s*\(")
+# Addresses ExportCorpus lists as functions but ImportSymbols can't rename
+# (not real Function objects in the Ghidra DB) — naming them is a no-op that
+# pollutes symbols.tsv, so skip.
+PHANTOM = {"080127a6", "08008d4e", "08008d50", "08008d56", "0801bae4"}
 
 
 def load_named():
@@ -56,7 +60,7 @@ def classify():
     named = load_named()
     out, cnt = [], Counter()
     for name, addr, size, body in iter_funcs():
-        if not name.startswith("FUN_"):
+        if not name.startswith("FUN_") or addr.lower() in PHANTOM:
             continue
         bi = body.find("{")
         if bi < 0:
