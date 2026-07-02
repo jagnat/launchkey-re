@@ -44,10 +44,24 @@ MODS = [
          to ="0a2f03d8012f01d338460ae00020002700bf00bf00bf00bf00bf00bf00bf00bf00bf"),
     dict(kind="append", name="euclid-rhythm-engine",
          desc="Detour rhythm_decode(FUN_080175b0): keep stock rhythms 0-4. For cfg[3] 5-10 = "
-              "PARAMETRIC Euclidean via euclid_compute, k=Mutate(cfg[6]) n=Deviate(cfg[9]) "
-              "(knob-wiring flash-experiment). euclid_compute = reusable track primitive.",
+              "Euclidean via euclid_compute, k=cfg[3]-1 n=16 rot=0. cfg[3] set on-device by the "
+              "widened Arp Rhythm pad row (pads 0xd/0xe/0xf -> E(4,16)/E(5,16)/E(6,16)).",
          asm="rhythm_decode.s",
          detour_site=0x080175B0, detour_from="70b5294b"),
+    dict(kind="inline", name="arp-rhythm-guard-widen",
+         desc="Widen arp_rhythm_select(0x0801387c) so the on-device Arp Rhythm pad row accepts "
+              "values 5..10 (free pads 0xd/0xe/0xf) not just 0..4. Replaces the compiler's "
+              "obfuscated tbb identity-switch with a direct clamp+store (cmp #10 / strb r4,[sp,#3]) "
+              "so pressing pad 0xd sets cfg[3]=5 -> Euclidean. Keeps the group-3 store; pads the "
+              "old tbb+cases with nops (dead). This is the on-device ENTRY into Euclidean mode.",
+         off=0xB88E,
+         frm="042cc1600bd8dfe804f0030c1004120000218df80310",
+         to ="c1600a2c0bd88df8034000bf00bf00bf00bf00bf00bf"),
+    # NOTE: n (pattern length) is driven by the stock Deviate KNOB (cfg[9]) while the Arp
+    # button is HELD — no custom hook needed (see notes/34, rhythm_decode.s). The earlier
+    # pot-scan hooks (knob_arp_hook.s @ control_value_emit, knob_f204_hook.s @ FUN_0800f204)
+    # were a dead end (wrong approach: turned knobs don't reach the arp UNLESS Arp is held)
+    # and have been removed.
 ]
 
 # ---------------------------------------------------------------- toolchain

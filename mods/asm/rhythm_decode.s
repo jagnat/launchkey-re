@@ -13,11 +13,15 @@
 @   +0  random flag   +4 mask(u32)   +8 period   +0x10 step ctr   +0x14 last-cfg
 @
 @ Behaviour: cfg[3] 0..4 == stock (O/OXO/OXXO/Random/Deviate, byte-identical to
-@ the original immediates). cfg[3] 5..10 == PARAMETRIC Euclidean: k = Mutate (cfg[6],
-@ CC 0x5a), n = Deviate (cfg[9], CC 0x5d), rot = 0, mask computed LIVE by euclid_compute.
-@ This is the knob-wiring flash-experiment: arp_cc_in_handler already stages Mutate/Deviate
-@ into cfg[6]/cfg[9] before calling rhythm_decode, so twisting those knobs (or sending the
-@ CCs from a host) re-derives the rhythm. euclid_compute is the reusable track primitive.
+@ the original immediates). cfg[3] 5..10 == Euclidean, driven by BOTH surfaces:
+@   k (density) = cfg[3]-1          <- set by the widened Arp Rhythm pad row
+@                                      (arp-rhythm-guard-widen): free pads 0xd/0xe/0xf
+@                                      -> cfg[3] 5/6/7 -> k 4/5/6. Also DAW CC 0x5b.
+@   n (length)  = 16 - (cfg[9]>>3)  <- set by the stock Deviate knob (cfg[9]) while
+@                                      the Arp button is HELD (per user guide p20).
+@                                      cfg[9]=0 (untouched) -> n=16, so pads alone
+@                                      still give E(k,16); turning Deviate shortens n.
+@ rot = 0, mask computed LIVE by euclid_compute (the reusable track primitive).
 @ ============================================================================
 rhythm_decode_new:
     push {r4, r5, r6, lr}
@@ -47,12 +51,11 @@ rhythm_decode_new:
     @ Deviate (cfg[9], CC 0x5d)                              -> n
     @ This is the knob-wiring flash-experiment: euclid_compute clamps the ranges.
     push {r1}                  @ preserve reset flag across the call
-    ldrb r4, [r0, #6]          @ r4 = mutate raw (k source)
-    ldrb r5, [r0, #9]          @ r5 = deviate raw (n source)
-    lsrs r0, r4, #3            @ k  = mutate >> 3   (~8..16 after CC clamp)
-    lsrs r5, r5, #3            @     deviate >> 3   (0..15)
-    adds r5, r5, #1            @ n  = (deviate>>3)+1 (1..16)   [r5 survives the call]
-    mov  r1, r5                @ euclid_compute arg: n
+    ldrb r5, [r0, #9]          @ r5 = cfg[9] = Deviate (written by the held-Arp Deviate knob)
+    subs r0, r4, #1            @ k = cfg[3] - 1  (PADS: selector 5..10 -> k 4..9)
+    lsrs r5, r5, #3            @ cfg[9] >> 3  (0..15)
+    rsb  r5, r5, #16           @ n = 16 - (cfg[9]>>3)   (knob at min -> n=16, up -> shorter)
+    mov  r1, r5                @ n  (euclid_compute arg; r5 also = period, survives the call)
     movs r2, #0                @ rot = 0
     bl   euclid_compute        @ r0 = mask  (clamps 1<=k<=n; preserves r3..r7)
     mov  r2, r0                @ mask -> store reg

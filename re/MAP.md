@@ -4,19 +4,28 @@
 **Project goal:** PRIMARY = targeted firmware mods (LED/arp/scale/velocity), don't break
 things (reversible, validate no-flash first, never flash without go-ahead). ANCILLARY =
 full semantic map — grow coverage when convenient, never at the device's/mod's expense.
-**Last checkpoint (2026-06-28):** **Parametric Euclidean Time-track — live + HW-validated,
-DAW/host-CC-playable.** Engine (`mods/asm/rhythm_decode.s`, detour @0x080175B0 → appended
-`euclid_compute`) computes masks live; for cfg[3]∈5..10 it reads k=cfg[6](Mutate),
-n=cfg[9](Deviate). Validated by DAW-port CC sweep (k flips density 12↔6, n changes pattern).
-Keeper mods in `mods/build.py`: `led-palette-42-red`, `cc5b-rhythm-clamp-0to10` (widened CC
-0x5b 1..4→1..10), `euclid-rhythm-engine`. **Knob-control investigation = dead end for now:**
-physical knobs are OUTPUT-ONLY standalone (firmware doesn't route them to the arp; Ableton
-bridges them); DAW-mode enable didn't help. cfg[9]=Deviate also double-duties as swing. See
-note 25. **Coverage:** 180/1233 funcs (14.6%) — arp UI/engine cluster named this session
-(see arp section); promote names each milestone (memory).
+**Last checkpoint (2026-07-01):** **On-device Euclidean arp control — WORKING + HW-validated,
+STANDALONE (no DAW).** Both control surfaces drive the euclid engine (`mods/asm/rhythm_decode.s`,
+rhythm_decode detour @0x080175B0 → appended `euclid_compute`), for cfg[3]∈5..10:
+- **k (density) = the Arp Rhythm PADS.** `arp-rhythm-guard-widen` (inline @`arp_rhythm_select`
+  0x0801387C) widens the pad-row guard 0..4→0..10 (drops the tbb identity-switch for a direct
+  `cmp #10 / strb r4`), so free pads **0xd/0xe/0xf → cfg[3]=5/6/7**. Engine: **k = cfg[3]-1** →
+  E(4/5/6, n).
+- **n (length) = the Deviate KNOB.** Engine: **n = 16-(cfg[9]>>3)**. Stock firmware already
+  writes cfg[9] from the Deviate knob **while the Arp button is HELD** (user guide p20) — this
+  is the routing note 25 MISSED (it tested knobs WITHOUT holding Arp). cfg[9]=0 (untouched)→n=16
+  so pads alone still give E(k,16) unchanged. Verified NOT gated to Deviate rhythm (works in euclid).
+Keeper mods (`mods/build.py`): `led-palette-42-red`, `cc5b-rhythm-clamp-0to10` (CC 0x5b 1..4→1..10),
+`euclid-rhythm-engine`, `arp-rhythm-guard-widen`. Validated via `midi_capture.py arp`: pads →
+E(4/5/6,16); held-Arp Deviate knob sweeps n (gaps 24→18→12...). **⚠ The "knob dead-end" verdict
+below (2026-06-28) is WRONG/superseded — knobs DO route to arp params, gated on Arp-held.**
+Next: Mutate knob → rotation (rot), 3rd param. **Coverage:** 328/1233 funcs (26.6%).
 **OPEN FORK (pick next):** A=accept DAW-CC v1 / **C=pivot control to PADS (standalone, we own
-arp_control_handler/arp_rhythm_select) + live pattern view** / D=RE the pot ADC-scan→CC-emit
-path to build standalone knob→arp routing. n needs a side-effect-free home (not cfg[9]).
+arp_control_handler/arp_rhythm_select) + live pattern view** / D=~~RE the pot ADC-scan→CC-emit
+path~~ **DONE (go-nuts-6): found it — `control_surface_scan`/`pot_scan`/`control_value_emit`
+(see "Control-surface scanner"). Knob→arp is now buildable: add a subscriber to
+`control_value_emit`'s list (`DAT_0800f8c0`) that writes arp cfg.** n needs a side-effect-free
+home (not cfg[9]).
 **ARCHITECTURE PIVOT (2026-06-28):** dropped the fixed-preset picker for a **parametric
 "tracks × generator primitive × focus UI"** model (user direction, "go bolder / replace
 stock"). Core insight: a Euclidean rhythm and an arp direction are the SAME op — distribute
@@ -52,6 +61,13 @@ Novation InControl/DAW-mode handshake (host/Ableton) to activate knob→arp rout
 user seeing Mutate/Deviate work "in Ableton"). Also **cfg[9]=Deviate double-duties as a
 timing/swing param** (clean {4,8} gap artifact) → bad home for n; n needs a side-effect-free
 field. **Net: Time track = DAW/host-CC-playable today; physical-knob binding is unsolved.**
+**❌ CORRECTION (2026-07-01): the above knob dead-end is WRONG.** The knobs DO route to arp
+params — but ONLY while the **Arp button is physically HELD** (user guide p20: held-Arp knobs =
+Tempo/Swing/Gate/Mutate/Deviate). Every "zero effect" test above turned knobs without holding
+Arp, so they emitted generic pot CCs (0x15-0x1c/ch16) instead of routing to cfg. With Arp held
+the Deviate knob writes cfg[9] and the Mutate knob writes cfg[6] internally (no CC emitted, and
+NOT gated to Deviate rhythm — verified in euclid rhythm). This is now the shipped n-control. See
+notes/34 + the "Last checkpoint" at top.
 **COVERAGE (2026-06-28):** mapped the **control-mapping / input-transform layer** (the
 `0x08011xxx` `ctrl_in_*` family) — see "Control-mapping layer" below — then the
 **scale/chord engine** (`0x08016xxx` + editor @`0x0801ACF0`) — see "Scale / Chord engine".
@@ -65,6 +81,16 @@ open "class byte → MIDI type" question — then the **control-smoothing/thinni
 (`bx lr`) functions, auto-classified from decompiled bodies. **Now 284/1233 funcs (23.0%),
 29.5% bytes** — function% jumped, bytes flat (these are all tiny). Re-run `classify_stubs.py`
 after future naming milestones: more thunks become classifiable as their targets get named.
+**COVERAGE (go-nuts-5):** mapped the **MIDI input router pipeline** (`midi_in_router` backbone
++ `control_claim_*` predicates) — see "MIDI input router pipeline". This closes the input loop:
+router → claim/route → the `ctrl_in_*` stages (note 26).
+**PERIPHERAL SWEEP (go-nuts-5):** audited every MMIO peripheral (via `PTR_<REG>` usage) and
+closed the gaps — **every STM32F401 peripheral the firmware uses now has a named driver**
+(added USART/CRC/EXTI/I2C drivers, clock/flash/pwr bringup, RCC enable+clk-freq helpers, GPIO
+config primitive). See expanded "Hardware drivers".
+**COVERAGE (go-nuts-6):** mapped the **control-surface scanner** (`0x0800F_` module) — the
+physical pot/strip/pad ADC-scan→condition→emit path (the missing piece from note 25's knob
+investigation). See "Control-surface scanner". Now 328/1233 funcs (26.6%), **35.0% bytes**.
 **Next steps (open decision):**
 - (A) Accept host/DAW-CC as v1 control surface; move on (pad-render live view / Pitch-Octave RE).
 - (B) ~~InControl test~~ DONE 2026-06-28: sent DAW-mode enable `9F 0C 7F` (DAW port) + twisted
@@ -135,7 +161,22 @@ Dense, high-confidence facts so we don't re-derive. Confidence: ★=verified,
 (GPIOC_IDR), `matrix_row_drive`@0800D8BC (GPIOB_BSRR), `matrix_pin_reconfig`@080093EA,
 `key_event_scan`@08009878, `key_debounce`@0800DA4C, `adc_dma_driver`@0800D900 (touch
 strips), `spi1_dma_driver`@0800953E. Registers labeled in `firmware.c` via `LoadSvd.java`
-+ `ApplyMmioPointers.java`; query with `q.py reg <REG>`.
++ `ApplyMmioPointers.java` as `PTR_<REG>_<addr>` literals (grep those, not `q.py reg`).
+
+**Peripheral coverage = complete (2026-06-28).** Audited via `PTR_<REG>` usage; every MMIO
+peripheral now has ≥1 named driver. Added drivers:
+| peripheral | driver(s) | role |
+|---|---|---|
+| Clock/Flash/PWR | `clock_config_boot`@08008DC2, `flash_cache_enable`@08009398, `rcc_hclk_from`@0800DBF0, `rcc_pclk1_from`@0800DBFC, `rcc_pclk2_from`@0800DC0C | HSE+PLL+flash-latency+voltage-scale bringup; flash I/D-cache; HCLK/PCLK1/PCLK2 freq from RCC_CFGR prescalers |
+| RCC enables | `rcc_ahb1_enable`@0800833C, `rcc_apb1_enable`@08008342, `rcc_apb2_enable`@0800835A, `rcc_ahb1_enable2`@080093C4, `rcc_pwr_clk_enable`@0800D870 | `RCC_xxxENR \|= mask` clock-gate shims |
+| GPIO | `gpio_pin_config`@0800999C | per-pin MODER/OTYPER/etc config primitive (6 callers) |
+| USART1/2/6 | `usart_init`@08009CB0 | configures CR1/CR2/CR3 + baud for the 3 UARTs |
+| I2C1 | `i2c_xfer`@0800D024 (xfer state machine), `i2c1_init`@08008E6C (clocks+pins) | the real I2C driver (was only incidentally touched) |
+| CRC | `crc_compute`@0801895C, `crc_update_byte`@08018944 | CRC32 unit (enable, feed words BE, bitwise byte step) |
+| EXTI | `exti_config`@08009A7C | EXTI IMR/EMR mask + edge-mode config |
+| USB GPIO | `usb_gpio_init`@0801586E, `usb_otg_gpio_init`@08015864 | PA11/PA12 + OTG_FS pin/PHY setup |
+Remaining unnamed MMIO-touchers are tiny redundant veneers (GPIO config thunks `FUN_08008d4e/d50`
+— Ghidra phantoms that won't take a name) — no whole peripheral is unmapped.
 
 ## `g_settings` @ 0x20002128 (the thread into musical features)
 Pointer used in code as `DAT_080127d8`. Known fields (offset from base):
@@ -175,6 +216,49 @@ Source modules (from kept `__FILE__` strings): `inputmidi_listener.c`@0x08011xxx
 | 12 handlers | `FUN_0801179c…0801215a` | ? one per message type (note-on/off/CC/pitchbend) — not yet split |
 | `FUN_0800C238`/`C2D6` | — | ☆ the two input feeds (USB vs DAW) |
 | MIDI-out builders | `midi_out_forward`@0801bbec, `chord_edit_handler`@0801acf0, `ctrl_out_encode`@08017940 | ☆ now named — see "MIDI output / TX stack" |
+
+## Control-surface scanner (2026-06-28, coverage) — `0x0800F_` module = the knob/strip path
+**This is the physical-input ADC→value path note 25 wanted.** `control_surface_scan`@`0x0800B8B8`
+is a **polled task** (run from `peripheral_init_all`'s main loop) that scans the analog controls,
+conditions each raw value (deadzone, calibration curve, hysteresis), and **publishes** it.
+| symbol | addr | role | conf |
+|---|---|---|---|
+| `control_surface_scan` | `0x0800B8B8` | top scan task: runs the 3 group scanners + handles ids 0x78/0x79 | ☆ |
+| `control_raw_read` | `0x0800A9E0` | read raw 12-bit value + mode-nibble (`&0xf000`) for a control id, via `key_event_scan`, with low-16 hysteresis (11 callers) | ★ |
+| `pot_scan` | `0x0800F06A` | scan the **8 pots** (ids 0x80+); ADC→value with deadzone (<0x259→0, mid linear, >0xdac→max) + `control_calib_lut` interpolation | ☆ |
+| `pitchstrip_scan` | `0x0800F4F0` | scan id **0x36** (pitch touch strip); center-scaled to 0x8000 (bipolar/pitchbend) | ☆ |
+| `control_velocity_scan` | `0x0800F260` | scan low ids (0+) with strike/velocity detection (pads/keys); 3 parallel state arrays (+0x80/+0x180/+0x280) | ☆ |
+| `control_value_emit` | `0x0800F840` | **publish** a conditioned (id,value) to a subscriber callback list (`DAT_0800f8c0`) — 5 callers | ☆ |
+| `control_value_release` | `0x0800F884` | publish a control release to subscriber list (`DAT_0800f8c8`) — 5 callers | ☆ |
+| `control_calib_lut` | `0x0800F9C4` | per-control calibration/curve LUT lookup (used by `pot_scan` interp) | ☆ |
+**Knob→arp seam (updated):** the pots ARE scanned and published internally via
+`control_value_emit` → its subscriber list. Note 25's "knobs are output-only" really means **the
+arp is not on that subscriber list** (the published value goes to the USB-CC-out path / Ableton
+bridge, not to `arp_cfg_apply`). A standalone knob→arp mod would hook here: add a subscriber to
+`control_value_emit`'s list (`DAT_0800f8c0`) that writes arp config, or have it target the arp's
+(class,index). The 5 `control_claim_*` predicates gate which controls this module processes.
+**Module still partly unmapped:** ~50 smaller `0x0800F_` helpers (state getters/setters,
+`FUN_0800ff18`, the f9xx accessor cluster) remain `FUN_`.
+
+## MIDI input router pipeline (2026-06-28, coverage) — `midi_in_router` backbone
+`midi_in_router`@`0x0800C0C6` is the **per-tick input pipeline**, not a status-byte switch. It
+resolves the source channel, walks that channel's route list, then runs the `ctrl_in_*`/note/
+realtime stages (note 26) in a fixed sequence (interleaved with two tiny `return;` barriers
+`FUN_0800c166`/`c1f4`, left unnamed). Newly named:
+| symbol | addr | role | conf |
+|---|---|---|---|
+| `route_channel_get` | `0x08011198` | route/control id (<0x80) → byte; low nibble = MIDI channel (`DAT_080111b8`) | ☆ |
+| `channel_route_list_get` | `0x080111AA` | channel (&0xf) → pointer to that channel's route-id list (0xff-terminated, `DAT_080111bc`) | ☆ |
+| `control_claimed_any` | `0x0800B91C` | 1 if any of 5 feature maps claims this control id (router counts claimed controls per channel) | ☆ |
+| `control_claim_u16/byte/id36/hi/id78` | `0x0800F4AE`/`F032`/`F67A`/`F212`/`F7C2` | the 5 leaf claim predicates (per-control u16 tbl / byte tbl / id==0x36 / id 0x80-0xff / id==0x78) — entry points into the `0x0800F_` feature module (68 funcs, still mostly unmapped) | ☆ |
+| `midi_event_slot_get` | `0x0800BF60` | allocate a 16-entry event slot (`DAT_0800c370`), else fall back to `ctrl_cfg_get` | ☆ |
+| `note_event_process` | `0x080119D6` | note-active/held-note update stage (tag 0x10000000; `note_active_*`, `held_note_scan`) | ☆ |
+| `route_bit_test` | `0x080114C4` | inverted per-route bitmap test (`DAT_08011528`, 128 bits) | ☆ |
+| `ctrl_feature_write` | `0x08011630` | commit a control value into the `0x0800F_` feature buffers (`DAT_0800fa80` u16 + `DAT_0800fa7c` dirty-bitmap) when cfg mode==1 | ☆ |
+| `midi_in_publish_frame`/`_flush` | `0x08011688`/`0x0801166C` | two more subscriber fan-outs (lists @`0x08011700`/`0x080116fc`); with `midi_in_publish` (@`0x08011704`) these are 3 adjacent callback-list slots = a multi-phase publish | ☆ |
+**Next lead:** the `0x0800F_` feature module (68 funcs) — the `control_claim_*` predicates and
+`ctrl_feature_write` are its entry points; the 5 claim tables (`DAT_0800f4cc/f048/f690/f22c/f7d8`)
+distinguish its sub-features.
 
 ## Control-mapping layer — input value transform (2026-06-28, coverage)
 The `0x08011xxx` `ctrl_in_*` family is the **value-transform stage** sitting between USB-MIDI
