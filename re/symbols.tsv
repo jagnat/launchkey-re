@@ -61,6 +61,8 @@
 0x0800B8D2	func	route_is_incontrol
 0x0800B91C	func	control_claimed_any
 0x0800BB50	func	led_set_color
+0x0800BB6C	func	led_attr_set_direct
+0x0800BC2C	func	pad_page_render_dispatch
 0x0800BECC	func	control_value_get
 0x0800BF60	func	midi_event_slot_get
 0x0800C0C6	func	midi_in_router
@@ -73,6 +75,7 @@
 0x0800C9AC	func	nullsub_0800c9ac
 0x0800CDCC	func	midi_note_state_get
 0x0800CDF8	func	midi_note_state_set
+0x0800CE9A	func	page_layer_push
 0x0800CEBC	func	j_assert_failed_2
 0x0800D024	func	i2c_xfer
 0x0800D764	func	j_assert_failed_3
@@ -113,11 +116,13 @@
 0x080101C6	func	nullsub_080101c6
 0x080101CC	func	nullsub_080101cc
 0x080101D2	func	nullsub_080101d2
+0x080104B6	func	page_mode_context
 0x08010E28	func	nullsub_08010e28
 0x08010E2A	func	nullsub_08010e2a
 0x08010E30	func	nullsub_08010e30
 0x08010E36	func	nullsub_08010e36
 0x08011198	func	route_channel_get
+0x080111A6	func	ctrl_group
 0x080111AA	func	channel_route_list_get
 0x080111E2	func	ctrl_cfg_get
 0x080114C4	func	route_bit_test
@@ -154,6 +159,7 @@
 0x080120A4	func	ctrl_in_pot_release
 0x0801215A	func	ctrl_in_pot_press
 0x0801230C	func	ctrl_value_scale_thunk
+0x080125EE	func	led_pad_paint_direct
 0x08012608	func	velocity_curve_apply
 0x0801267C	func	settings_apply_all
 0x080126D0	func	settings_led_init
