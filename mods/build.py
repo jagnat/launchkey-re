@@ -31,6 +31,9 @@ ASMDIR = ROOT / "mods" / "asm"
 # ---------------------------------------------------------------- mod manifest
 # Order matters only for append-address allocation; inline/detour application is
 # independent (each is asserted against the bytes it expects).
+# RULE: when you edit an .s file, update that mod's name/desc in the same change —
+# a desc describing an older iteration of the asm is worse than no desc.
+# Dead-end asm goes to mods/asm/attic/, with its post-mortem in re/map/.
 MODS = [
     dict(kind="inline", name="led-palette-42-red",
          desc="Palette index 42 -> red (BGR 00 00 7f); was cyan 7f 2f 00",
@@ -57,11 +60,24 @@ MODS = [
          off=0xB88E,
          frm="042cc1600bd8dfe804f0030c1004120000218df80310",
          to ="c1600a2c0bd88df8034000bf00bf00bf00bf00bf00bf"),
-    # NOTE: n (pattern length) is driven by the stock Deviate KNOB (cfg[9]) while the Arp
-    # button is HELD — no custom hook needed (see notes/34, rhythm_decode.s). The earlier
-    # pot-scan hooks (knob_arp_hook.s @ control_value_emit, knob_f204_hook.s @ FUN_0800f204)
-    # were a dead end (wrong approach: turned knobs don't reach the arp UNLESS Arp is held)
-    # and have been removed.
+    # DIAGNOSTIC PAIR (pad-id scope) — remove both once the custom-page toggle input is solved.
+    # Verdict so far: param_1 is NOT the discrete pad id (readout swamped by per-frame events;
+    # real id travels in r4 inside arp_control_handler) — see re/map/arp.md "Input-side findings".
+    dict(kind="append", name="padscope-render",
+         desc="DIAGNOSTIC render half of the pad-id scope. main_task_tick empty slot @0x0800C95A: "
+              "while the arp panel is active, draw the debug byte @0x2000DD37 as 8-bit binary on "
+              "the bottom pad row (blue=1). Preserves r4-r7.",
+         asm="page_slot.s",
+         detour_site=0x0800C95A, detour_from="fbf73bfc", detour_call=True),
+    dict(kind="append", name="padscope-input",
+         desc="DIAGNOSTIC input half. Hook control_dispatch's `bl arp_control_handler` @0x0800C778: "
+              "while the arp panel is active, record every event id (param_1) into the debug byte "
+              "@0x2000DD37, then call the real arp_control_handler.",
+         asm="arp_toggle.s",
+         detour_site=0x0800C778, detour_from="07f0d0f8", detour_call=True),
+    # Dead-end asm lives in mods/asm/attic/ (hello_page.s tracer, custom_page.s v1) —
+    # post-mortems in re/map/leds.md. n (pattern length) needs no hook: the stock Deviate knob
+    # writes cfg[9] while Arp is HELD (re/map/arp.md).
 ]
 
 # ---------------------------------------------------------------- toolchain
@@ -93,6 +109,14 @@ def thumb_bw(pc, target):
     hw1 = 0xF000 | (S << 10) | imm10
     hw2 = 0x8000 | (J1 << 13) | (1 << 12) | (J2 << 11) | imm11
     return bytes([hw1 & 0xFF, hw1 >> 8, hw2 & 0xFF, hw2 >> 8])
+
+def thumb_bl(pc, target):
+    """Encode a Thumb-2 BL (T1) from `pc` to `target`. Same as B.W but sets the
+    link bit (hw2 bit14) so lr is written — used to redirect an existing `bl`
+    call-site to appended code while still returning into the caller."""
+    b = bytearray(thumb_bw(pc, target))
+    b[3] |= 0x40                                          # hw2 |= 0x4000 (link)
+    return bytes(b)
 
 def align4(x):
     return (x + 3) & ~3
@@ -157,8 +181,10 @@ def main():
             frm = bytes.fromhex(m["detour_from"])
             assert img[off:off + len(frm)] == frm, \
                 f"{m['name']}: detour-site expected {frm.hex()} at 0x{site:X}, found {img[off:off+len(frm)].hex()}"
-            img[off:off + 4] = thumb_bw(site, m["_addr"])
-            report.append(f"  [append] {m['name']:24s} detour @0x{site:08X} -> 0x{m['_addr']:08X} "
+            enc = thumb_bl if m.get("detour_call") else thumb_bw
+            img[off:off + 4] = enc(site, m["_addr"])
+            kind = "bl-call" if m.get("detour_call") else "b.w"
+            report.append(f"  [append] {m['name']:24s} {kind} @0x{site:08X} -> 0x{m['_addr']:08X} "
                           f"({len(m['_bytes'])} B)")
 
     open(OUT_BIN, "wb").write(img)

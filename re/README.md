@@ -4,6 +4,10 @@ This directory is both the **RE checkpoint** (progressively replacing Ghidra's
 `FUN_*`/`DAT_*` with real names) and a **pre-computed index** so routine
 investigation costs a `grep`, not a 30-second Ghidra launch.
 
+Human-curated knowledge lives next to the corpus: `MAP.md` (session init: current
+status + dead-ends + index) and `map/*.md` (per-subsystem reference sheets —
+LEDs/pages, arp, input path, MIDI, scale/chord, system, validation).
+
 ## Source of truth & data flow
 ```
 raw .bin ──import──►  Ghidra project (tools/ghidra_proj/LKMini)   ← THE database

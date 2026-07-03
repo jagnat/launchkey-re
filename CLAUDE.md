@@ -13,9 +13,9 @@ This file is **stable**: it does not track current status. Live status lives in
 
 ## Start here — every new context
 
-1. **Read `re/MAP.md` first.** Its top **"Current status"** section = the active task,
-   next steps, and latest checkpoint. The rest is the technical cheat-sheet (addresses,
-   symbols, tables, hardware map). This is the init — start nowhere else.
+1. **Read `re/MAP.md` first** (it is small — status, dead-ends, index, quick reference).
+   Then open ONLY the `re/map/*.md` topic sheet(s) the task needs (the index in MAP.md says
+   what each contains). This is the init — start nowhere else, load nothing else up front.
 2. **Do NOT read `notes/`** unless the user names a specific file. `notes/` is a human
    teaching log: large, narrative, written for the user — not for Claude context. All
    facts Claude needs must live in `re/MAP.md` + the `re/` corpus, not in a note.
@@ -37,10 +37,14 @@ This file is **stable**: it does not track current status. Live status lives in
 
 - The device is a **MIDI black box** — drive + observe it live with
   `scripts/midi_capture.py` (no flashing, zero risk). Prefer **measured MIDI** to the
-  slow flash→eyeball loop when validating a hypothesis.
-- **Flashing:** `python scripts/flash.py <file.syx> --go` **must run in the
+  slow flash→eyeball loop when validating a hypothesis. Measured facts: `re/map/validation.md`.
+- **Building:** `mods/build.py` is the canonical accumulating build — its `MODS` list is the
+  **single source of truth for what an image contains**. What is actually *flashed on the
+  device* is recorded in `re/MAP.md` Current status; keep the two in sync at every flash.
+- **Flashing:** `.venv/bin/python scripts/flash.py build/firmware.syx --go` **must run in the
   background**; it is reversible (a bad image → bootloader keeps the prior firmware).
   **Never flash without an explicit go-ahead from the user.**
+- Run scripts with **`.venv/bin/python`** (mido lives there, not in system python).
 
 ## Stable toolchain gotchas
 
@@ -59,8 +63,12 @@ This file is **stable**: it does not track current status. Live status lives in
 
 ## Keeping context small (the point of this layout)
 
-- One source of truth for Claude: **`re/MAP.md` + the `re/` corpus + `scripts/`**.
-- If a fact matters going forward, put it in **`re/MAP.md`**, not in a teaching note.
-- After each milestone: **update the "Current status" section at the top of
-  `re/MAP.md`**, and write/update a human teaching note in `notes/NN-*.md` (explain the
-  *why*, not just the result).
+- One source of truth for Claude: **`re/MAP.md` (init) + `re/map/*.md` (reference sheets) +
+  the `re/` corpus + `scripts/`**.
+- If a fact matters going forward, put it in the right **`re/map/*.md` sheet**, not in a
+  teaching note. New symbol names → `re/symbols.tsv` + corpus regen.
+- After each milestone: **rewrite `re/MAP.md`'s "Current status" IN PLACE** — current truth
+  only, ≤40 lines, never append checkpoints or corrections (history = git log + notes).
+  Proven dead ends get one line in MAP.md's dead-ends list. Then write/update a human
+  teaching note in `notes/NN-*.md` (explain the *why*, not just the result), and offer
+  the user a commit — the old-state record is git history, not prose in MAP.md.

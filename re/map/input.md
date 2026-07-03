@@ -1,0 +1,74 @@
+# Physical input path: control-surface scanner, MIDI input router, control-mapping layer
+
+Confidence: ★=verified, ☆=strong inference, ?=guess.
+The full input loop: ADC scan → condition → publish (`0x0800F_`), and USB-MIDI RX → router →
+claim/route → `ctrl_in_*` transform stages → subscriber fan-out.
+
+## Control-surface scanner (`0x0800F_` module) — the physical knob/strip/pad path
+`control_surface_scan`@`0x0800B8B8` is a **polled task** (run from `peripheral_init_all`'s main
+loop) that scans the analog controls, conditions each raw value (deadzone, calibration curve,
+hysteresis), and publishes it.
+| symbol | addr | role | conf |
+|---|---|---|---|
+| `control_surface_scan` | `0x0800B8B8` | top scan task: runs the 3 group scanners + handles ids 0x78/0x79 | ☆ |
+| `control_raw_read` | `0x0800A9E0` | read raw 12-bit value + mode-nibble (`&0xf000`) for a control id, via `key_event_scan`, with low-16 hysteresis (11 callers) | ★ |
+| `pot_scan` | `0x0800F06A` | scan the **8 pots** (ids 0x80+); ADC→value with deadzone (<0x259→0, mid linear, >0xdac→max) + `control_calib_lut` interpolation | ☆ |
+| `pitchstrip_scan` | `0x0800F4F0` | scan id **0x36** (pitch touch strip); center-scaled to 0x8000 (bipolar/pitchbend) | ☆ |
+| `control_velocity_scan` | `0x0800F260` | scan low ids (0+) with strike/velocity detection (pads/keys); 3 parallel state arrays (+0x80/+0x180/+0x280) | ☆ |
+| `control_value_emit` | `0x0800F840` | **publish** a conditioned (id,value) to subscriber callback list (`DAT_0800f8c0`) — 5 callers | ☆ |
+| `control_value_release` | `0x0800F884` | publish a control release to subscriber list (`DAT_0800f8c8`) — 5 callers | ☆ |
+| `control_calib_lut` | `0x0800F9C4` | per-control calibration/curve LUT lookup (used by `pot_scan` interp) | ☆ |
+**Knob→arp seam:** pots ARE scanned + published via `control_value_emit` → its subscriber list;
+the arp is just not a subscriber (published values go to the USB-CC-out path / Ableton bridge).
+A standalone knob→arp mod hooks here: add a subscriber to `DAT_0800f8c0` that writes arp cfg.
+The 5 `control_claim_*` predicates gate which controls this module processes.
+**Module still partly unmapped:** ~50 smaller `0x0800F_` helpers (state getters/setters,
+`FUN_0800ff18`, the f9xx accessor cluster) remain `FUN_`.
+
+## MIDI input router pipeline — `midi_in_router` backbone
+`midi_in_router`@`0x0800C0C6` is the **per-tick input pipeline**, not a status-byte switch. It
+resolves the source channel, walks that channel's route list, then runs the `ctrl_in_*`/note/
+realtime stages in a fixed sequence (interleaved with two tiny `return;` barriers
+`FUN_0800c166`/`c1f4`, left unnamed).
+| symbol | addr | role | conf |
+|---|---|---|---|
+| `route_channel_get` | `0x08011198` | route/control id (<0x80) → byte; low nibble = MIDI channel (`DAT_080111b8`) | ☆ |
+| `channel_route_list_get` | `0x080111AA` | channel (&0xf) → ptr to that channel's route-id list (0xff-terminated, `DAT_080111bc`) | ☆ |
+| `control_claimed_any` | `0x0800B91C` | 1 if any of 5 feature maps claims this control id (router counts claimed controls per channel) | ☆ |
+| `control_claim_u16/byte/id36/hi/id78` | `0x0800F4AE`/`F032`/`F67A`/`F212`/`F7C2` | the 5 leaf claim predicates (per-control u16 tbl / byte tbl / id==0x36 / id 0x80-0xff / id==0x78) — entry points into the `0x0800F_` feature module (68 funcs, mostly unmapped); claim tables `DAT_0800f4cc/f048/f690/f22c/f7d8` | ☆ |
+| `midi_event_slot_get` | `0x0800BF60` | allocate a 16-entry event slot (`DAT_0800c370`), else fall back to `ctrl_cfg_get` | ☆ |
+| `note_event_process` | `0x080119D6` | note-active/held-note update stage (tag 0x10000000; `note_active_*`, `held_note_scan`) | ☆ |
+| `route_bit_test` | `0x080114C4` | inverted per-route bitmap test (`DAT_08011528`, 128 bits) | ☆ |
+| `ctrl_feature_write` | `0x08011630` | commit a control value into the `0x0800F_` feature buffers (`DAT_0800fa80` u16 + `DAT_0800fa7c` dirty-bitmap) when cfg mode==1 | ☆ |
+| `midi_in_publish_frame`/`_flush` | `0x08011688`/`0x0801166C` | two more subscriber fan-outs (lists @`0x08011700`/`0x080116fc`); with `midi_in_publish` (@`0x08011704`) = 3 adjacent callback-list slots = multi-phase publish | ☆ |
+
+## Control-mapping layer (`0x08011xxx` `ctrl_in_*`) — input value transform
+The value-transform stage between USB-MIDI RX and the feature subscribers. Each stage is invoked
+per incoming control, looks up a **per-route descriptor** (`table[route]`), checks the active
+tag (`word & 0xf0000000 == 0x10000000`), splits it into a **class byte** (`(word>>0x10)&0xff`)
++ **16-bit index** (`word & 0xffff`), reads/writes the value store via `midi_note_state_get/set`,
+transforms the value, then `midi_in_publish`-es to all subscribers. `midi_in_publish`@0x080116A4
+is a subscriber fan-out (callback array `_DAT_08011704`, count at `+0x20`). Chain driver
+`FUN_0800c1b6` runs the `0xe3`/pickup/pot-press stages in sequence; `midi_in_router` runs
+`ctrl_in_pot_release`.
+| symbol | addr | role | conf |
+|---|---|---|---|
+| `ctrl_cfg_get` | `0x080111E2` | per-control 16-B config accessor (`_DAT_08011340 + route*0x10`); +2/+4=u16 lo/hi range, **+0xd&7 = mode** (0=fixed,1=relative,2=toggle,6=relative-clamp) | ★ |
+| `ctrl_value_scale` | `0x08011538` | scale-about-base: `base ± ((|v-base|+1)*gain >> 16)` (16.16 fixed) | ☆ |
+| `ctrl_value_scale_thunk` | `0x0801230C` | thin tail-call → `ctrl_value_scale` (relative decode) | ☆ |
+| `ctrl_soft_pickup` | `0x0801159C` | **soft-takeover/pickup**: per-control last-value `DAT_08011624`[128]u16 + flags `DAT_08011628`[128]; returns 0 until physical control "catches" stored value | ☆ |
+| `ctrl_pickup_gate` | `0x0801156E` | wraps `ctrl_soft_pickup` w/ 2-entry mode `DAT_0801162c`; clears flags | ☆ |
+| `ctrl_route_enabled_a/b/c` | `0x08011B30`/`0x08011D10`/`0x08011E74` | per-route enable bitmaps (`DAT_08011d08`/`08011e6c`/`08012300`), 1 bit/route; a/b/c gate the wheel/special/pot stages resp. | ☆ |
+| `route_is_incontrol` | `0x0800B8D2` | route<0x78 && route-mode `&0xf000==0x2000` → route is in InControl/DAW mode | ☆ |
+| `ctrl_in_wheel` | `0x08011B46` | class 0xe0-0xe3 (pitchbend/wheel grp); `>>9` 14→7bit or note-state\|0x4000; gate=enable_a | ☆ |
+| `ctrl_in_wheel_scaled` | `0x08011C7C` | class 0xe3; `ctrl_value_scale`+`ctrl_pickup_gate` then publish; gate=enable_a | ☆ |
+| `ctrl_in_special` | `0x08011D26` | class 0xf6-0xf8 (realtime grp); passthrough + state; gate=enable_b | ☆ |
+| `ctrl_in_special_pickup` | `0x08011DF2` | class 0xf7-0xf8; value `>>2` + `ctrl_soft_pickup`; gate=enable_b | ☆ |
+| `ctrl_in_pot_modes` | `0x08011FE4` | class top-nibble 0x10-0x60; modes fixed/toggle/relative-clamp via cfg+0xd; gate=enable_c | ☆ |
+| `ctrl_in_pot_release` | `0x080120A4` | same class; removes route from active list `DAT_08012304` (+0x34=count); mode-0 fixed; called by `midi_in_router` | ☆ |
+| `ctrl_in_pot_press` | `0x0801215A` | same class; insert/evict in active list (find-min eviction); pitchbend-zone map (param thresholds 0x6000..0xe000); modes 1/2/4/5; gate=enable_c | ☆ |
+**Routing note:** the `class`/route-id namespacing means a physical knob's value only reaches
+the arp if its route descriptor maps it there — consistent with standalone knobs emitting raw
+pot CCs not routed to `arp_cc_in_handler` (see arp.md "Knob → arp routing"). Class-byte →
+physical-control decode (which class = which knob/fader/pad) is the open unknown here. The
+class byte maps to a MIDI message type on output via `ctrl_out_encode` — see midi.md.
