@@ -32,9 +32,9 @@ CC 0x5b selects presets 5-10. Details + formulas: `re/map/arp.md`. Keeper mods (
   Minor open oddity: Transpose press moved Fixed Chord's LED in mode 1 (pre-M2.1).
   Then: M3 Euclid app page, M4 looper/bounce/generative.
 
-**Device currently runs (flashed 2026-07-03):** M1+M2 UI layer = current `mods/build.py`
-MODS (4 keepers + `ui-layer-m1m2`). Shift+pad8 toggles the custom home page; HW test
-verdict pending.
+**Device currently runs (flashed 2026-07-03):** M2.1 UI layer = current `mods/build.py`
+MODS (4 keepers + `ui-layer-m1m2` with emit-tap swallow). Shift+pad8 toggles the custom
+home page; surface capture verdict pending.
 
 **Direction (2026-07-03, user-ratified):** page/menu foundation FIRST — looper, note-bounce,
 and generative modes all need latch-in/out pages + owned input, so they queue behind it.
