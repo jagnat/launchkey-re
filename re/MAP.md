@@ -28,8 +28,9 @@ CC 0x5b selects presets 5-10. Details + formulas: `re/map/arp.md`. Keeper mods (
 - Then: page gate (toggle control TBD from the id map) + menu system **authored in C**
   (arm-none-eabi-gcc is installed; build.py needs a small `kind="append"` C variant).
 
-**Device currently runs (flashed 2026-07-03):** ctlscope **v2** — superseded; its readout is
-poisoned by the `0x2000DD37` contention (always shows `id&8`). Flash v3 next.
+**Device currently runs (flashed 2026-07-03):** ctlscope **v3** = current `mods/build.py`
+MODS exactly (4 keepers + ctlscope pair, debug pair @`0x2000F000`). Bottom row = last
+published control id (blue binary, low bit pad 8); top row = value low-byte (green).
 
 **Direction (2026-07-03, user-ratified):** page/menu foundation FIRST — looper, note-bounce,
 and generative modes all need latch-in/out pages + owned input, so they queue behind it.
