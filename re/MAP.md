@@ -30,9 +30,9 @@ CC 0x5b selects presets 5-10. Details + formulas: `re/map/arp.md`. Keeper mods (
   struct @`0x2000F000` (magic/mode/shift/frame). Known v1 leak: pads still emit MIDI
   notes in mode 1. Plan after HW test: M3 Euclid app page, then M4 looper/bounce/generative.
 
-**Device currently runs (flashed 2026-07-03):** keepers-only = current `mods/build.py` MODS
-(4 keepers; ctlscope v3 retired to the disabled list in build.py after the id map was
-measured). Stock UI fully usable — flashed for on-device toggle-candidate exploration.
+**Device currently runs (flashed 2026-07-03):** M1+M2 UI layer = current `mods/build.py`
+MODS (4 keepers + `ui-layer-m1m2`). Shift+pad8 toggles the custom home page; HW test
+verdict pending.
 
 **Direction (2026-07-03, user-ratified):** page/menu foundation FIRST — looper, note-bounce,
 and generative modes all need latch-in/out pages + owned input, so they queue behind it.
