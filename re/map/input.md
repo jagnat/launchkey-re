@@ -52,6 +52,15 @@ The 5 `control_claim_*` predicates gate which controls this module processes.
 **Module still partly unmapped:** ~50 smaller `0x0800F_` helpers (state getters/setters,
 `FUN_0800ff18`, the f9xx accessor cluster) remain `FUN_`.
 
+## Stock-UI input takeover (the M2 dispatch gate) ★ asm-verified
+`control_dispatch(id)`@`0x0800C72C` prologue: `push {r4,lr}; mov r4,r0; bl FUN_0800c616;
+cmp; mov r0,r4; beq layer0` — layer-1/settings path branches BEFORE the layer-0 chain. The
+layer-0 chain's first call is an EMPTY SLOT `bl nullsub_080081d0` @`0x0800C742` (bytes
+`fbf745fd`), reached with r0=id and stack exactly `[saved r4][saved lr→event pump]`. Hook it
+(bl detour): plain `bx lr` = stock; `pop {r4, pc}` = abort the whole stock handler chain and
+return to the pump. The shift/settings path stays stock, so its layer state can't wedge.
+Used by `ui_dispatch_gate` (mods/asm/ui_glue.s) gated on the mode byte @`0x2000F004`.
+
 ## MIDI input router pipeline — `midi_in_router` backbone
 `midi_in_router`@`0x0800C0C6` is the **per-tick input pipeline**, not a status-byte switch. It
 resolves the source channel, walks that channel's route list, then runs the `ctrl_in_*`/note/

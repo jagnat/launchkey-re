@@ -22,9 +22,13 @@ CC 0x5b selects presets 5-10. Details + formulas: `re/map/arp.md`. Keeper mods (
   Full map + hook recipe: `re/map/input.md`. Serves page toggle, in-page input, knob→arp.
 - Mod scratch RAM = `0x2000F000`+ (statics end ~`0x2000E771`; `0x2000DD37` is poisoned — see
   dead ends). Page flag can live there.
-- NEXT: the page GATE — pick toggle (a button 0x10-0x19 or Shift+pad chord; must not fight
-  the stock handler for that control) + menu system **authored in C** (arm-none-eabi-gcc
-  installed; build.py needs a small `kind="append"` C variant). Then remove ctlscope.
+- M1+M2 BUILT (2026-07-03, flash-pending): first **C payload** (`mods/c/ui.c` +
+  `mods/asm/ui_glue.s`; build.py now compiles/links multi-src append blocks, multi-detour
+  via symbols, rejects .data/.bss). Gate = **Shift+pad8 toggle** → mode 1 home page
+  (breathing violet, pad0=Euclid tile stub, pad8=exit). M2 = dispatch gate aborts
+  `control_dispatch`'s layer-0 chain while mode≠0 (recipe: `re/map/input.md`). State
+  struct @`0x2000F000` (magic/mode/shift/frame). Known v1 leak: pads still emit MIDI
+  notes in mode 1. Plan after HW test: M3 Euclid app page, then M4 looper/bounce/generative.
 
 **Device currently runs (flashed 2026-07-03):** keepers-only = current `mods/build.py` MODS
 (4 keepers; ctlscope v3 retired to the disabled list in build.py after the id map was

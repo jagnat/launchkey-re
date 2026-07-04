@@ -11,9 +11,15 @@ Two mod kinds:
   inline  — overwrite bytes at a fixed file offset (data patches, tiny code patches).
             `frm` is asserted against stock first, so a mod can never silently apply
             to the wrong bytes.
-  append  — assemble a Thumb asm source (mods/asm/<file>), place it in the erased
-            flash sector-4 tail (auto-allocated from IMAGE_END, 4-aligned, stacking),
-            and install a 4-byte `b.w` detour overwriting an existing function entry.
+  append  — build sources (Thumb asm and/or freestanding C) into one block placed in
+            the erased flash sector-4 tail (auto-allocated from IMAGE_END, 4-aligned,
+            stacking), then install one or more 4-byte detours (`b.w` or `bl`) into it.
+            Legacy form: asm="file.s" + detour_site/detour_from/detour_call (detour
+            targets the block start). New form: srcs=["asm/x.s","c/y.c"] +
+            detours=[dict(site=, frm=, sym=, call=False)] — each detour lands on a
+            named symbol resolved from the linked block. C payloads must keep ALL
+            state in the 0x2000F000 scratch struct: .data/.bss are rejected (nothing
+            initializes/loads them in the flash tail).
 
 Flashing is NOT done here. Flash with:
   .venv/bin/python scripts/flash.py build/firmware.syx --go     (then press Scene Launch)
@@ -60,6 +66,20 @@ MODS = [
          off=0xB88E,
          frm="042cc1600bd8dfe804f0030c1004120000218df80310",
          to ="c1600a2c0bd88df8034000bf00bf00bf00bf00bf00bf"),
+    dict(kind="append", name="ui-layer-m1m2",
+         desc="Custom UI layer M1+M2 (first C payload: c/ui.c + asm/ui_glue.s shims). "
+              "Shift+pad8 toggles mode 1 = home page (breathing violet grid, pad0 = Euclid "
+              "tile placeholder, pad8 = exit->stock). While mode!=0 the dispatch gate aborts "
+              "control_dispatch's layer-0 chain (stock UI deaf; shift/settings layer stays "
+              "stock). Input = press/release taps on the publish seam. State @0x2000F000. "
+              "Known v1 leaks: pads still emit MIDI notes in mode 1 (note path separate).",
+         srcs=["asm/ui_glue.s", "c/ui.c"],
+         detours=[
+             dict(site=0x0800C95A, frm="fbf73bfc", call=True, sym="ui_frame"),
+             dict(site=0x0800F840, frm="f8b50446", sym="ui_tap_emit"),
+             dict(site=0x0800F884, frm="70b50446", sym="ui_tap_release"),
+             dict(site=0x0800C742, frm="fbf745fd", call=True, sym="ui_dispatch_gate"),
+         ]),
     # DIAGNOSTIC PAIR (control-id scope v3) — DISABLED 2026-07-03 after it served its
     # purpose (full surface id map measured -> re/map/input.md). Re-enable by moving the
     # two dicts back inside MODS if another id question comes up.
@@ -93,18 +113,43 @@ def find_tool(name):
     hits = sorted(glob.glob(f"/Applications/ArmGNUToolchain/*/arm-none-eabi/bin/{name}"))
     return hits[-1] if hits else name
 
-AS, LD, OBJCOPY, OBJDUMP = (find_tool(t) for t in
-    ("arm-none-eabi-as", "arm-none-eabi-ld", "arm-none-eabi-objcopy", "arm-none-eabi-objdump"))
+AS, LD, OBJCOPY, OBJDUMP, GCC, NM = (find_tool(t) for t in
+    ("arm-none-eabi-as", "arm-none-eabi-ld", "arm-none-eabi-objcopy", "arm-none-eabi-objdump",
+     "arm-none-eabi-gcc", "arm-none-eabi-nm"))
 
-def assemble(asm_path, at_addr):
-    """Assemble + link a Thumb asm file at an absolute address; return raw bytes."""
+CFLAGS = ["-mcpu=cortex-m4", "-mthumb", "-Os", "-ffreestanding", "-fno-builtin",
+          "-nostdlib", "-fomit-frame-pointer", "-fno-common", "-Wall", "-Werror"]
+
+def build_block(srcs, at_addr):
+    """Assemble (.s) / compile (.c) sources, link the block at an absolute address.
+    Returns (raw bytes, {symbol: address}). Rejects .data/.bss (see module docstring)."""
     with tempfile.TemporaryDirectory() as d:
-        o, elf, b = d + "/a.o", d + "/a.elf", d + "/a.bin"
-        subprocess.run([AS, "-mcpu=cortex-m4", "-mthumb", str(asm_path), "-o", o], check=True)
-        subprocess.run([LD, f"-Ttext=0x{at_addr:X}", "-o", elf, o],
+        objs = []
+        for i, s in enumerate(srcs):
+            src, o = ROOT / "mods" / s, f"{d}/{i}.o"
+            if s.endswith(".c"):
+                subprocess.run([GCC, *CFLAGS, "-c", str(src), "-o", o], check=True)
+            else:
+                subprocess.run([AS, "-mcpu=cortex-m4", "-mthumb", str(src), "-o", o], check=True)
+            objs.append(o)
+        elf, b = d + "/a.elf", d + "/a.bin"
+        # -n: don't page-align sections (keeps .rodata packed right after .text)
+        subprocess.run([LD, "-n", f"-Ttext=0x{at_addr:X}", "-o", elf] + objs,
                        check=True, stderr=subprocess.DEVNULL)
+        for ln in subprocess.run([OBJDUMP, "-h", elf], capture_output=True, text=True,
+                                 check=True).stdout.splitlines():
+            p = ln.split()
+            if len(p) > 3 and p[1] in (".data", ".bss") and int(p[2], 16):
+                raise SystemExit(f"append block has non-empty {p[1]} ({int(p[2],16)} B) — "
+                                 "keep all mod state in the 0x2000F000 scratch struct")
+        syms = {}
+        for ln in subprocess.run([NM, elf], capture_output=True, text=True,
+                                 check=True).stdout.splitlines():
+            p = ln.split()
+            if len(p) == 3:
+                syms[p[2]] = int(p[0], 16)
         subprocess.run([OBJCOPY, "-O", "binary", elf, b], check=True)
-        return open(b, "rb").read()
+        return open(b, "rb").read(), syms
 
 def thumb_bw(pc, target):
     """Encode a Thumb-2 B.W (T4) branch from `pc` to `target` (±16 MB)."""
@@ -158,11 +203,16 @@ def main():
 
     print(f"stock: {len(stock)} B, ends 0x{image_end:08X}\n")
 
-    # pass 1: assemble + allocate append blocks
+    # pass 1: build + allocate append blocks (normalize legacy single-detour form)
     for m in MODS:
         if m["kind"] == "append":
+            m["_srcs"] = m.get("srcs") or ["asm/" + m["asm"]]
+            m["_detours"] = m.get("detours") or [dict(site=m["detour_site"],
+                                                      frm=m["detour_from"],
+                                                      call=m.get("detour_call", False),
+                                                      sym=None)]
             m["_addr"] = next_addr
-            m["_bytes"] = assemble(ASMDIR / m["asm"], next_addr)
+            m["_bytes"], m["_syms"] = build_block(m["_srcs"], next_addr)
             next_addr = align4(next_addr + len(m["_bytes"]))
 
     # pass 2: lay down append blocks (padding gaps with 0xFF = erased flash)
@@ -185,15 +235,22 @@ def main():
             img[off:off + len(to)] = to
             report.append(f"  [inline] {m['name']:24s} @0x{BASE+off:08X}  {frm.hex()} -> {to.hex()}")
         else:
-            site, off = m["detour_site"], m["detour_site"] - BASE
-            frm = bytes.fromhex(m["detour_from"])
-            assert img[off:off + len(frm)] == frm, \
-                f"{m['name']}: detour-site expected {frm.hex()} at 0x{site:X}, found {img[off:off+len(frm)].hex()}"
-            enc = thumb_bl if m.get("detour_call") else thumb_bw
-            img[off:off + 4] = enc(site, m["_addr"])
-            kind = "bl-call" if m.get("detour_call") else "b.w"
-            report.append(f"  [append] {m['name']:24s} {kind} @0x{site:08X} -> 0x{m['_addr']:08X} "
-                          f"({len(m['_bytes'])} B)")
+            for dt in m["_detours"]:
+                site, off = dt["site"], dt["site"] - BASE
+                frm = bytes.fromhex(dt["frm"])
+                assert img[off:off + len(frm)] == frm, \
+                    f"{m['name']}: detour-site expected {frm.hex()} at 0x{site:X}, found {img[off:off+len(frm)].hex()}"
+                if dt.get("sym"):
+                    assert dt["sym"] in m["_syms"], f"{m['name']}: symbol {dt['sym']} not in block"
+                    target = m["_syms"][dt["sym"]]
+                else:
+                    target = m["_addr"]
+                enc = thumb_bl if dt.get("call") else thumb_bw
+                img[off:off + 4] = enc(site, target)
+                kind = "bl-call" if dt.get("call") else "b.w"
+                tgt = f"{dt['sym']}@" if dt.get("sym") else ""
+                report.append(f"  [append] {m['name']:24s} {kind} @0x{site:08X} -> {tgt}0x{target:08X}")
+            report.append(f"  [append] {m['name']:24s} block @0x{m['_addr']:08X} ({len(m['_bytes'])} B)")
 
     open(OUT_BIN, "wb").write(img)
     encode_syx(OUT_BIN, OUT_SYX)
@@ -208,9 +265,10 @@ def main():
     print("\nVERIFY — detours & appended code:")
     for m in MODS:
         if m["kind"] == "append":
-            site, off = m["detour_site"], m["detour_site"] - BASE
-            print(f"\n  {m['name']} detour @0x{site:08X}:")
-            print("   ", disasm(bytes(img[off:off+4]), site).splitlines()[-1])
+            print(f"\n  {m['name']}:")
+            for dt in m["_detours"]:
+                site, off = dt["site"], dt["site"] - BASE
+                print("   ", disasm(bytes(img[off:off+4]), site).splitlines()[-1])
             a = m["_addr"] - BASE
             print(f"  appended @0x{m['_addr']:08X} ({len(m['_bytes'])} B):")
             for line in disasm(bytes(img[a:a+len(m["_bytes"])]), m["_addr"]).splitlines()[:4]:
