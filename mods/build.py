@@ -51,12 +51,8 @@ MODS = [
          off=0x12C1C,
          frm="781e03280bd8dfe800f002040608012007e0022005e0032003e0042001e000200027",
          to ="0a2f03d8012f01d338460ae00020002700bf00bf00bf00bf00bf00bf00bf00bf00bf"),
-    dict(kind="append", name="euclid-rhythm-engine",
-         desc="Detour rhythm_decode(FUN_080175b0): keep stock rhythms 0-4. For cfg[3] 5-10 = "
-              "Euclidean via euclid_compute, k=cfg[3]-1 n=16 rot=0. cfg[3] set on-device by the "
-              "widened Arp Rhythm pad row (pads 0xd/0xe/0xf -> E(4,16)/E(5,16)/E(6,16)).",
-         asm="rhythm_decode.s",
-         detour_site=0x080175B0, detour_from="70b5294b"),
+    # euclid-rhythm-engine (asm) retired 2026-07-03: ported to C (c/rhythm.c) inside the
+    # ui-layer block below, same detour site. Old source: mods/asm/attic/rhythm_decode.s.
     dict(kind="inline", name="arp-rhythm-guard-widen",
          desc="Widen arp_rhythm_select(0x0801387c) so the on-device Arp Rhythm pad row accepts "
               "values 5..10 (free pads 0xd/0xe/0xf) not just 0..4. Replaces the compiler's "
@@ -66,19 +62,21 @@ MODS = [
          off=0xB88E,
          frm="042cc1600bd8dfe804f0030c1004120000218df80310",
          to ="c1600a2c0bd88df8034000bf00bf00bf00bf00bf00bf"),
-    dict(kind="append", name="ui-layer-m1m2",
-         desc="Custom UI layer M1+M2 (first C payload: c/ui.c + asm/ui_glue.s shims). "
-              "Shift+pad8 toggles mode 1 = home page (breathing violet grid, pad0 = Euclid "
-              "tile placeholder, pad8 = exit->stock). While mode!=0 the dispatch gate aborts "
-              "control_dispatch's layer-0 chain (stock UI deaf; shift/settings layer stays "
-              "stock). Input = press/release taps on the publish seam. State @0x2000F000. "
-              "Known v1 leaks: pads still emit MIDI notes in mode 1 (note path separate).",
-         srcs=["asm/ui_glue.s", "c/ui.c"],
+    dict(kind="append", name="ui-layer",
+         desc="Custom UI layer M1+M2.1+M3 (C payload: c/ui.c + c/rhythm.c + asm/ui_glue.s). "
+              "Shift+pad8 toggles the layer. Home (mode 1): pad0 = Euclid app, pad8 = exit. "
+              "Euclid app (mode 2): 16-pad live pattern view (playing step highlighted), "
+              "knobs 1/2/3 = k/n/rot, Fixed Chord = back home. While active: emit tap "
+              "swallows ids <0x80 (keys pass) + dispatch gate blocks stock UI. Engine: "
+              "rhythm_decode ported to C, UI override > pad-row presets 5-10 > stock 0-4; "
+              "stock selector change cancels the override. State @0x2000F000.",
+         srcs=["asm/ui_glue.s", "c/ui.c", "c/rhythm.c"],
          detours=[
              dict(site=0x0800C95A, frm="fbf73bfc", call=True, sym="ui_frame"),
              dict(site=0x0800F840, frm="f8b50446", sym="ui_tap_emit"),
              dict(site=0x0800F884, frm="70b50446", sym="ui_tap_release"),
              dict(site=0x0800C742, frm="fbf745fd", call=True, sym="ui_dispatch_gate"),
+             dict(site=0x080175B0, frm="70b5294b", sym="rhythm_decode_new"),
          ]),
     # DIAGNOSTIC PAIR (control-id scope v3) — DISABLED 2026-07-03 after it served its
     # purpose (full surface id map measured -> re/map/input.md). Re-enable by moving the

@@ -26,11 +26,14 @@ CC 0x5b selects presets 5-10. Details + formulas: `re/map/arp.md`. Keeper mods (
   build.py compiles/links multi-src append blocks, multi-detour via symbols, rejects
   .data/.bss). **Shift+pad8 toggle** → mode 1 home page; dispatch gate blocks stock UI
   (recipe: `re/map/input.md`). State struct @`0x2000F000`.
-- M2.1 BUILT (flash-pending): v1 leaks (Play/Record MIDI+LED, pad notes, ghost Shift latch)
-  all = OTHER subscribers of the same publish seam → fix = emit tap SWALLOWS ids <0x80
-  while the layer is active (skip the fan-out; keys ≥0x80 pass; releases always pass).
-  Minor open oddity: Transpose press moved Fixed Chord's LED in mode 1 (pre-M2.1).
-  Then: M3 Euclid app page, M4 looper/bounce/generative.
+- M2.1 HW-VALIDATED (2026-07-03): emit tap SWALLOWS ids <0x80 while the layer is active
+  (skip the fan-out; keys ≥0x80 pass; releases always pass) — full surface capture, no
+  MIDI/LED leaks, no ghost Shift latch.
+- M3 BUILT (flash-pending): **Euclid app** (mode 2, via home pad0). 16-pad live pattern
+  view (playing step highlighted from `RHY->step`), knobs 1/2/3 = k/n/rot (full 1..16 +
+  rotation), Fixed Chord = back home. Engine PORTED TO C (`mods/c/rhythm.c`, replaces
+  rhythm_decode.s → attic): UI override > pad-row presets 5-10 > stock 0-4; stock/DAW
+  selector change cancels the override. Then: M4 looper/bounce/generative.
 
 **Device currently runs (flashed 2026-07-03):** M2.1 UI layer = current `mods/build.py`
 MODS (4 keepers + `ui-layer-m1m2` with emit-tap swallow). Shift+pad8 toggles the custom
