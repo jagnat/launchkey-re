@@ -55,9 +55,9 @@ a side-effect-free home for n is still wanted. Next planned: Mutate knob → rot
   (rightmost 3 = 0x1A/0x1B/0x1C). These do NOT reach `arp_cc_in_handler` (only ch0 0x55-0x5d on
   the DAW port do). The "knobs do Mutate/Deviate in Ableton" behavior = Ableton's Launchkey
   script bridging, not firmware routing. DAW-mode enable `9F 0C 7F` does not change this.
-- **Buildable alternative:** the pots ARE scanned+published internally via
-  `control_value_emit`@`0x0800F840` → subscriber list `DAT_0800f8c0` (see input.md). The arp
-  simply isn't on that list; a standalone knob→arp mod = add a subscriber that writes arp cfg.
+- **Buildable alternative (★★ HW-proven 2026-07-03):** the knobs publish internally as ids
+  **0x38-0x3F** via `control_value_emit`@`0x0800F840` → subscriber list (see input.md). The arp
+  simply isn't a subscriber; a standalone knob→arp mod = tap/subscribe there and write arp cfg.
 
 ## Arp Controls PAGE UI (note 23) — fully traced press→config
 Two structs: UI state `g_arp_state_ptr`@`0x2000e628` (+0 panel-active, +2 held, **+0xc active
@@ -77,18 +77,17 @@ CC 0x5b path (`arp_cc_in_handler`) shares the same `arp_cfg_apply`. Render: `arp
 | `arp_page_render` | `0x08013508` | light 16 pads for the arp page (`DAT_08013b00`=4 group colours) |
 | `arp_mode_select` | `0x08013B34` | **NOT the arp page** — drives sibling struct (`DAT_08013e00`=`0x2000e648`), likely scale/fixed-chord page (unconfirmed) |
 
-## Input-side findings for a custom toggle (2026-07-03: pads = ids 0x00-0x0F)
-Goal: a deliberate pad/button to toggle the custom page.
-- **Pads are control ids `0x00-0x0F`** (type 3 in `g_control_type_tbl`@`0x0801C7D0` — see
-  input.md), published at standalone by `control_press_scan` via
-  `control_value_emit(id, value)`@`0x0800F840`. Consistent with `arp_control_handler`'s
-  switch semantics (top row 0-3 = group, bottom 8-0xf = value) reading param_1 AS the pad id.
+## Input-side findings for a custom toggle (★★ RESOLVED 2026-07-03, HW-measured)
+- **Pads are control ids `0x00-0x0F`** (reading order), published at standalone by
+  `control_press_scan` via `control_value_emit(id, value)`@`0x0800F840`. Full surface id map
+  (buttons 0x10-0x19, knobs 0x38-0x3F, strips 0x36/37, keys 0x80-0x98): input.md.
+  Consistent with `arp_control_handler`'s switch semantics reading param_1 AS the pad id.
 - The v1/v2 scope verdicts ("param_1 ≠ pad id, id travels in r4") were an ARTIFACT: both
   scopes stored to `0x2000DD37`, which lives inside firmware statics and gets overwritten
-  with `id&8`-like values every scan (post-mortem in leds.md). ctlscope v3 (debug pair moved
-  to free RAM `0x2000F000`, id+value rendered on bottom/top pad rows) is the clean re-test.
-- Known BUTTON ids (0x17/0x19/0x60/0x61/0x62, type 4) remain a fallback toggle; UART printf
-  (`usart_init`@`0x08009CB0`) is not needed.
+  with `id&8`-like values every scan (post-mortem in leds.md). ctlscope v3 (debug pair in
+  free RAM `0x2000F000`) measured clean ids for the whole surface.
+- Page-toggle candidates now = any button id 0x10-0x19 or a Shift(0x19)+pad chord; UART
+  printf is not needed.
 
 ## Design direction (2026-06-28 pivot, user: "go bolder / replace stock")
 Parametric **"tracks × generator primitive × focus UI"** model: a Euclidean rhythm and an arp

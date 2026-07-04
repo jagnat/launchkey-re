@@ -16,17 +16,15 @@ CC 0x5b selects presets 5-10. Details + formulas: `re/map/arp.md`. Keeper mods (
 **Active task: custom pad page (own the grid with our own UI).**
 - RENDER SEAM PROVEN on HW (2026-07-02): hook `main_task_tick`'s empty slot @`0x0800C95A`,
   per pad `led_attr_set_direct` + `led_set_color`, preserve r4/r5/r6. Recipe: `re/map/leds.md`.
-- INPUT UNBLOCKED in the corpus (2026-07-03, HW-pending): **pads = control ids 0x00-0x0F**
-  (type table `g_control_type_tbl`@`0x0801C7D0`); at standalone `control_press_scan` publishes
-  them via `control_value_emit(id,value)`@`0x0800F840` → subscriber table @`0x2000E3B0`
-  (decode + hook recipe in `re/map/input.md`). One seam serves page toggle, in-page pad input,
-  AND standalone knob→arp (old fork c). No UART needed.
+- INPUT SEAM ★★ HW-PROVEN (2026-07-03, ctlscope v3): `control_value_emit(id,value)`
+  @`0x0800F840` publishes the WHOLE surface with discrete ids — pads 0x00-0x0F, buttons
+  0x10-0x19, strips 0x36/37, knobs 0x38-0x3F, keys 0x80-0x98 (+pad pressure as values).
+  Full map + hook recipe: `re/map/input.md`. Serves page toggle, in-page input, knob→arp.
 - Mod scratch RAM = `0x2000F000`+ (statics end ~`0x2000E771`; `0x2000DD37` is poisoned — see
   dead ends). Page flag can live there.
-- NEXT FLASH = `ctlscope` **v3** (built, awaiting go-ahead): records (id,value) @`0x2000F000/1`;
-  bottom row = id in blue binary, top row = value low-byte in green → confirm the pad-id map.
-- Then: page gate (toggle control TBD from the id map) + menu system **authored in C**
-  (arm-none-eabi-gcc is installed; build.py needs a small `kind="append"` C variant).
+- NEXT: the page GATE — pick toggle (a button 0x10-0x19 or Shift+pad chord; must not fight
+  the stock handler for that control) + menu system **authored in C** (arm-none-eabi-gcc
+  installed; build.py needs a small `kind="append"` C variant). Then remove ctlscope.
 
 **Device currently runs (flashed 2026-07-03):** ctlscope **v3** = current `mods/build.py`
 MODS exactly (4 keepers + ctlscope pair, debug pair @`0x2000F000`). Bottom row = last

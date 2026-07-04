@@ -96,7 +96,7 @@
 0x0800EFFC	func	j_control_value_emit_2
 0x0800F01C	func	j_control_value_emit_4
 0x0800F032	func	control_claim_byte
-0x0800F06A	func	pot_scan
+0x0800F06A	func	keybed_scan
 0x0800F204	func	j_control_value_emit_2_2
 0x0800F212	func	control_claim_hi
 0x0800F260	func	control_velocity_scan

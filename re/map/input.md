@@ -9,29 +9,31 @@ claim/route → `ctrl_in_*` transform stages → subscriber fan-out.
 loop) that scans the analog controls, conditions each raw value (deadzone, calibration curve,
 hysteresis), and publishes it.
 
-**Control-id → type map** ★ (`g_control_type_tbl`@`0x0801C7D0`, 256 B, read via
-`control_type_get`@`0x08016792`):
+**Control-id map ★★ HW-MEASURED 2026-07-03 (ctlscope v3)** — types from
+`g_control_type_tbl`@`0x0801C7D0` (256 B, read via `control_type_get`@`0x08016792`):
 | ids | type | what |
 |---|---|---|
-| `0x00-0x0F` | 3 | **the 16 pads** (16 entries exactly) |
-| `0x10-0x30` | 4 | buttons (0x17 Play, 0x19, … live here; type-0 holes = unpopulated) |
-| `0x36,0x37` | 5 | the two touch strips (pitch / mod) |
-| `0x38-0x3F` | 6 | InControl-mode velocity/pressure controls (see `control_velocity_scan`) |
-| `0x50-0x58` | 7 | ditto, second bank |
+| `0x00-0x0F` | 3 | **the 16 pads**, reading order: top row l-r = 0x0-0x7, bottom = 0x8-0xF |
+| `0x10-0x19` | 4 | buttons: 0x10 Scene Launch, 0x11 Stop/Solo/Mute, 0x12 Transpose, 0x13 Oct+, 0x14 Oct-, 0x15 Arp, 0x16 Fixed Chord, 0x17 Play, 0x18 Record, 0x19 Shift |
+| `0x36,0x37` | 5 | touch strips: 0x36 pitch, 0x37 modulation |
+| `0x38-0x3F` | 6 | **the 8 knobs**, l-r (NOT pots\|0x80 — that guess was wrong) |
+| `0x50-0x58` | 7 | 9 entries, absent on the Mini — ☆ the 9 faders of the bigger Launchkey MK3s (family-shared scan config) |
 | `0x78,0x79` | 8 | `control_surface_scan`'s special pair |
-| `0x80+` | 1/2 | pots namespace (`pot_scan` emits `idx|0x80`); 0x80-0xFF pattern ☆ unclear |
+| `0x80-0x98` | 1/2 | **the 25 keybed keys**, one id per semitone (C=0x80 … C+2oct=0x98); type 1=white, 2=black (the 1/2 table pattern IS the keyboard layout) |
+Keys and pad PRESSURE stream through the seam too (green-row readout tracked pad pressure)
+— the publish seam sees the whole surface, notes included.
 
 | symbol | addr | role | conf |
 |---|---|---|---|
 | `control_surface_scan` | `0x0800B8B8` | top scan task: runs the group scanners + handles ids 0x78/0x79 | ☆ |
 | `control_raw_read` | `0x0800A9E0` | read raw 12-bit value + mode-nibble (`&0xf000`) for a control id, via `key_event_scan`, with low-16 hysteresis (11 callers) | ★ |
-| `pot_scan` | `0x0800F06A` | scan the **8 pots** (ids 0x80+); ADC→value with deadzone (<0x259→0, mid linear, >0xdac→max) + `control_calib_lut` interpolation | ☆ |
+| `keybed_scan` | `0x0800F06A` | scan the **25 keybed keys** (emits `idx\|0x80` — the key ids, ex-"pot_scan"); ADC→value with deadzone (<0x259→0, mid linear, >0xdac→max) + `control_calib_lut` interpolation | ★ |
 | `pitchstrip_scan` | `0x0800F4F0` | scan id **0x36** (pitch touch strip); center-scaled to 0x8000 (bipolar/pitchbend) | ☆ |
-| `control_press_scan` | `0x0800EC54` | **the standalone press path**: iterate ids 0..0x7f, type∉{0,8}; mode-nibble 0 = digital threshold (raw≥0x800) → `control_value_emit(id, mapped-val)` + `emit_4`; mode 0x1000 = analog velocity state machine. Pads at standalone publish HERE | ☆ |
-| `control_velocity_scan` | `0x0800F260` | strike/velocity scan for **type-6/7 controls in InControl mode ONLY** (`type∈{6,7} && raw&0xf000==0x2000`); 3 parallel state arrays (+0x180/+0x280/+0x380); emits press(id,0xffff)/pressure via `emit_4`/release. Publishes NOTHING at standalone | ★ |
+| `control_press_scan` | `0x0800EC54` | **the standalone press path** for pads/buttons/knobs/strips: iterate ids 0..0x7f, type∉{0,8}; mode-nibble 0 = digital threshold (raw≥0x800) → `control_value_emit(id, mapped-val)` + `emit_4`; mode 0x1000 = analog velocity/pressure state machine | ★ |
+| `control_velocity_scan` | `0x0800F260` | strike/velocity scan for **type-6/7 controls (knobs/faders) in InControl mode ONLY** (`type∈{6,7} && raw&0xf000==0x2000`); 3 parallel state arrays (+0x180/+0x280/+0x380); emits press(id,0xffff)/pressure via `emit_4`/release. Publishes NOTHING at standalone | ★ |
 | `control_value_emit` | `0x0800F840` | **publish** a conditioned (id,value) to subscriber callback list (`DAT_0800f8c0`) — 5 callers | ☆ |
 | `control_value_release` | `0x0800F884` | publish a control release to subscriber list (`DAT_0800f8c8`) — 5 callers | ☆ |
-| `control_calib_lut` | `0x0800F9C4` | per-control calibration/curve LUT lookup (used by `pot_scan` interp) | ☆ |
+| `control_calib_lut` | `0x0800F9C4` | per-control calibration/curve LUT lookup (used by `keybed_scan` interp) | ☆ |
 **The publish seam, asm-decoded (2026-07-03):** `control_value_emit(r0=id, r1=value)` ★ —
 walks subscriber table @`0x2000E3B0` (literal @`0x0800F8C0`): count byte at `+0`, callback
 ptrs at `+4+i*4`, capacity 8 (☆ from the 0x24 stride to the next table); each called as
@@ -39,9 +41,9 @@ ptrs at `+4+i*4`, capacity 8 (☆ from the 0x24 stride to the next table); each 
 `mov`-only). Three sibling fan-outs, same layout: `0x0800F85C`→table `0x2000E3D4`,
 `control_value_release`@`0x0800F884`→`0x2000E3F8` (cb gets `r0=id` only),
 `0x0800F8A2`→`0x2000E41C`. **This seam carries EVERY conditioned physical event with its
-discrete id** — pads/keys (`control_velocity_scan`), pots `|0x80` (`pot_scan`, decompile shows
-`control_value_emit(idx|0x80, value)` ★), strip 0x36 — so it is the input backbone for both
-the custom page (pad ids the arp-page router hides in r4) and standalone knob→arp.
+discrete id** ★★ HW-proven 2026-07-03: pads/buttons/knobs/strips via `control_press_scan`,
+keys `|0x80` via `keybed_scan` — the full id map is the table above. It is the input backbone
+for the custom page AND standalone knob→arp.
 **Hook recipe:** prologue detour on `0x0800F840` (entry bytes `f8b50446` = push+`mov r4,r0`),
 record/act on (r0,r1), replay the 2 displaced insns, resume `0x0800F844|1` — r2/r3 are dead
 there. Implemented: `mods/asm/emit_tap.s` (ctlscope diagnostic). Alternatively REGISTER a real

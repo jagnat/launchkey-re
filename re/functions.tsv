@@ -431,7 +431,7 @@
 0x0800F022	FUN_0800f022	16	2	0	11576	12	undefined2 FUN_0800f022(uint param_1);
 0x0800F032	control_claim_byte	22	1	0	11588	13	undefined1 control_claim_byte(uint param_1);
 0x0800F05C	FUN_0800f05c	14	1	1	11601	14	void FUN_0800f05c(undefined4 param_1);
-0x0800F06A	pot_scan	410	1	10	11615	115	uint pot_scan(undefined4 param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4);
+0x0800F06A	keybed_scan	410	1	10	11615	115	uint keybed_scan(undefined4 param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4);
 0x0800F204	j_control_value_emit_2_2	10	1	1	11730	14	void j_control_value_emit_2_2(undefined4 param_1,undefined2 param_2);
 0x0800F20E	FUN_0800f20e	4	1	0	11744	9	undefined4 FUN_0800f20e(void);
 0x0800F212	control_claim_hi	26	1	0	11753	12	bool control_claim_hi(uint param_1);
