@@ -76,28 +76,36 @@ void ui_frame(void)
         render_home();
 }
 
-void ui_on_press(uint32_t id, uint32_t value)
+/* Returns the SWALLOW verdict for ui_tap_emit: nonzero = do not run
+ * control_value_emit's subscriber fan-out for this event. While the layer is
+ * active (before OR after handling, so entry/exit presses are swallowed too),
+ * all surface controls (id < 0x80: pads, buttons, strips, knobs) are ours
+ * alone — no stock MIDI/LED/transport subscriber hears them. Keys (>= 0x80)
+ * always pass so the keyboard keeps playing. Releases are never swallowed
+ * (ui_tap_release passes through) so stock press/release pairing can't wedge
+ * for presses stock saw before we went active. */
+uint32_t ui_on_press(uint32_t id, uint32_t value)
 {
     (void)value;
     if (UI->magic != UI_MAGIC)
-        return;
+        return 0;
+    uint32_t was_active = UI->mode;
+
     if (id == ID_SHIFT) {
         UI->shift_down = 1;
-        return;
-    }
-    if (id == PAD_GATE && UI->shift_down) {     /* Shift+pad8: toggle the layer */
+    } else if (id == PAD_GATE && UI->shift_down) {  /* Shift+pad8: toggle */
         if (UI->mode == 0) {
             UI->mode = 1;                       /* paints on shift release */
         } else {
             UI->mode = 0;
             restore_stock_leds();
         }
-        return;
-    }
-    if (UI->mode == 1 && id == PAD_GATE) {      /* bare exit tile */
+    } else if (UI->mode == 1 && id == PAD_GATE) {   /* bare exit tile */
         UI->mode = 0;
         restore_stock_leds();
     }
+
+    return (id < 0x80 && (was_active || UI->mode)) ? 1 : 0;
 }
 
 void ui_on_release(uint32_t id)

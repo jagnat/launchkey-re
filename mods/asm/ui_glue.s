@@ -10,20 +10,29 @@
 @ ============================================================================
 
 @ ---- ui_tap_emit: prologue detour on control_value_emit @0x0800F840 --------
-@ (r0=id, r1=value). Call ui_on_press(id, value), then replay the 2 displaced
-@ entry insns (push {r3-r7,lr}; mov r4,r0) and resume @0x0800F844 (r2/r3 are
-@ dead there — the fan-out loop re-derives them).
+@ (r0=id, r1=value). Call ui_on_press(id, value); nonzero return = SWALLOW:
+@ skip the subscriber fan-out entirely and return to the scanner — no stock
+@ MIDI/LED/dispatch subscriber sees the event (M2.1). Otherwise replay the 2
+@ displaced entry insns (push {r3-r7,lr}; mov r4,r0) and resume @0x0800F844.
+@ Swallow return value: stock emit's epilogue (pop {r0,r4-r7,pc}) hands the
+@ caller's ORIGINAL r3 back in r0, and control_press_scan feeds that return
+@ into j_control_value_emit_4 — so mimic it exactly (mov r0, r3).
     .global ui_tap_emit
     .thumb_func
 ui_tap_emit:
-    push {r0, r1, r2, lr}
+    push {r0, r1, r2, r3, ip, lr}
     bl   ui_on_press
-    pop  {r0, r1, r2, lr}
+    cmp  r0, #0
+    pop  {r0, r1, r2, r3, ip, lr}   @ flags survive the pop
+    bne  9f
     push {r3, r4, r5, r6, r7, lr}   @ displaced
     mov  r4, r0                     @ displaced
     movw r2, #0xF845                @ 0x0800F844 | thumb
     movt r2, #0x0800
     bx   r2
+9:
+    mov  r0, r3                     @ stock-identical return quirk
+    bx   lr
 
 @ ---- ui_tap_release: prologue detour on control_value_release @0x0800F884 --
 @ (r0=id). Displaced entry: push {r4,r5,r6,lr}; mov r4,r0. Resume @0x0800F888.

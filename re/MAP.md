@@ -22,13 +22,15 @@ CC 0x5b selects presets 5-10. Details + formulas: `re/map/arp.md`. Keeper mods (
   Full map + hook recipe: `re/map/input.md`. Serves page toggle, in-page input, knob→arp.
 - Mod scratch RAM = `0x2000F000`+ (statics end ~`0x2000E771`; `0x2000DD37` is poisoned — see
   dead ends). Page flag can live there.
-- M1+M2 BUILT (2026-07-03, flash-pending): first **C payload** (`mods/c/ui.c` +
-  `mods/asm/ui_glue.s`; build.py now compiles/links multi-src append blocks, multi-detour
-  via symbols, rejects .data/.bss). Gate = **Shift+pad8 toggle** → mode 1 home page
-  (breathing violet, pad0=Euclid tile stub, pad8=exit). M2 = dispatch gate aborts
-  `control_dispatch`'s layer-0 chain while mode≠0 (recipe: `re/map/input.md`). State
-  struct @`0x2000F000` (magic/mode/shift/frame). Known v1 leak: pads still emit MIDI
-  notes in mode 1. Plan after HW test: M3 Euclid app page, then M4 looper/bounce/generative.
+- M1+M2 HW-VALIDATED (2026-07-03): first **C payload** (`mods/c/ui.c` + `mods/asm/ui_glue.s`;
+  build.py compiles/links multi-src append blocks, multi-detour via symbols, rejects
+  .data/.bss). **Shift+pad8 toggle** → mode 1 home page; dispatch gate blocks stock UI
+  (recipe: `re/map/input.md`). State struct @`0x2000F000`.
+- M2.1 BUILT (flash-pending): v1 leaks (Play/Record MIDI+LED, pad notes, ghost Shift latch)
+  all = OTHER subscribers of the same publish seam → fix = emit tap SWALLOWS ids <0x80
+  while the layer is active (skip the fan-out; keys ≥0x80 pass; releases always pass).
+  Minor open oddity: Transpose press moved Fixed Chord's LED in mode 1 (pre-M2.1).
+  Then: M3 Euclid app page, M4 looper/bounce/generative.
 
 **Device currently runs (flashed 2026-07-03):** M1+M2 UI layer = current `mods/build.py`
 MODS (4 keepers + `ui-layer-m1m2`). Shift+pad8 toggles the custom home page; HW test
