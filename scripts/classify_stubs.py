@@ -100,7 +100,9 @@ def main():
             ai = int(a, 16)
             if ai in rows:
                 continue
-            rows[ai] = (a, "func", n)
+            # canonical 0x-prefixed addr — ImportSymbols Long.decode()s the field,
+            # so a bare hex string like "0800effc" would octal-parse and be skipped
+            rows[ai] = (f"0x{ai:08X}", "func", n)
             added += 1
         with open(SYM, "w") as f:
             f.write("\n".join(header) + "\n")

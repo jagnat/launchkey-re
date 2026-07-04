@@ -60,21 +60,24 @@ MODS = [
          off=0xB88E,
          frm="042cc1600bd8dfe804f0030c1004120000218df80310",
          to ="c1600a2c0bd88df8034000bf00bf00bf00bf00bf00bf"),
-    # DIAGNOSTIC PAIR (pad-id scope) — remove both once the custom-page toggle input is solved.
-    # Verdict so far: param_1 is NOT the discrete pad id (readout swamped by per-frame events;
-    # real id travels in r4 inside arp_control_handler) — see re/map/arp.md "Input-side findings".
-    dict(kind="append", name="padscope-render",
-         desc="DIAGNOSTIC render half of the pad-id scope. main_task_tick empty slot @0x0800C95A: "
-              "while the arp panel is active, draw the debug byte @0x2000DD37 as 8-bit binary on "
-              "the bottom pad row (blue=1). Preserves r4-r7.",
+    # DIAGNOSTIC PAIR (control-id scope v2) — remove both once the custom-page toggle input
+    # is solved. v1 (arp_toggle.s hook on control_dispatch's bl arp_control_handler) failed:
+    # param_1 there is NOT the discrete pad id — see re/map/arp.md "Input-side findings".
+    # v2 taps the scanner's PUBLISH seam instead: control_value_emit(id, value) sees every
+    # conditioned pad/key/pot/strip event with its discrete id (see re/map/input.md).
+    dict(kind="append", name="ctlscope-render",
+         desc="DIAGNOSTIC render half of the control-id scope. main_task_tick empty slot "
+              "@0x0800C95A: every frame, draw the debug byte @0x2000DD37 as 8-bit binary on "
+              "the bottom pad row (blue=1, low bit on pad 8). Preserves r4-r7.",
          asm="page_slot.s",
          detour_site=0x0800C95A, detour_from="fbf73bfc", detour_call=True),
-    dict(kind="append", name="padscope-input",
-         desc="DIAGNOSTIC input half. Hook control_dispatch's `bl arp_control_handler` @0x0800C778: "
-              "while the arp panel is active, record every event id (param_1) into the debug byte "
-              "@0x2000DD37, then call the real arp_control_handler.",
-         asm="arp_toggle.s",
-         detour_site=0x0800C778, detour_from="07f0d0f8", detour_call=True),
+    dict(kind="append", name="ctlscope-input",
+         desc="DIAGNOSTIC input half v2. Prologue detour on control_value_emit @0x0800F840: "
+              "record every published control id (r0) into the debug byte @0x2000DD37, replay "
+              "the 2 displaced entry insns, resume @0x0800F844. Proves the subscriber seam "
+              "planned as the custom-page input backbone.",
+         asm="emit_tap.s",
+         detour_site=0x0800F840, detour_from="f8b50446"),
     # Dead-end asm lives in mods/asm/attic/ (hello_page.s tracer, custom_page.s v1) —
     # post-mortems in re/map/leds.md. n (pattern length) needs no hook: the stock Deviate knob
     # writes cfg[9] while Arp is HELD (re/map/arp.md).

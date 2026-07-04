@@ -77,18 +77,17 @@ CC 0x5b path (`arp_cc_in_handler`) shares the same `arp_cfg_apply`. Render: `arp
 | `arp_page_render` | `0x08013508` | light 16 pads for the arp page (`DAT_08013b00`=4 group colours) |
 | `arp_mode_select` | `0x08013B34` | **NOT the arp page** — drives sibling struct (`DAT_08013e00`=`0x2000e648`), likely scale/fixed-chord page (unconfirmed) |
 
-## Input-side findings for a custom toggle (2026-07-02, blocked)
-Goal: a deliberate pad/button to toggle the custom page. Findings from hooking
-`control_dispatch`'s `bl arp_control_handler` @`0x0800C778`:
-- `arp_control_handler` **ignores pads 6/7** (only 0-3 group, 4/5, 8-0xf value); v3/v3.1 pads
-  6/7 did nothing.
-- A blind pad-id scope (record `param_1`, draw binary on bottom row — current diagnostic build)
-  shows all bottom-row events as 8, all top as 0: `param_1` is NOT the discrete pad id; the
-  readout is swamped by per-frame event noise. **The real pressed-pad id travels in r4
-  (`unaff_r4`) into the value handlers**, set inside `arp_control_handler`.
-- ⇒ Options: **serial UART printf** (user soldering TX/GND; `usart_init`@`0x08009CB0` configures
-  USART1/2/6 — debug UART plausibly live on pads), or use a known BUTTON id
-  (0x17/0x19/0x60/0x61/0x62 from `transport_button_handler`) as the toggle instead of an arp pad.
+## Input-side findings for a custom toggle (2026-07-03: UNBLOCKED via the publish seam)
+Goal: a deliberate pad/button to toggle the custom page.
+- Dead end (kept in MAP.md): hooking `control_dispatch`'s `bl arp_control_handler` @`0x0800C778`
+  cannot identify pads — `param_1` is not the discrete pad id (id travels in r4 into the value
+  handlers, set inside `arp_control_handler`); `arp_control_handler` ignores pads 6/7.
+- **The answer is one layer lower:** `control_value_emit(id, value)`@`0x0800F840` publishes
+  every conditioned pad/key/pot/strip event with its discrete id — full decode + hook recipe in
+  input.md. Diagnostic `ctlscope` (emit_tap.s + page_slot.s) renders the last published id in
+  binary on the bottom pad row; flash it to learn the pad-id map, then the page gate + in-page
+  input both ride this seam. UART printf (`usart_init`@`0x08009CB0`) is no longer needed for
+  this; known BUTTON ids (0x17/0x19/0x60/0x61/0x62) remain a fallback toggle.
 
 ## Design direction (2026-06-28 pivot, user: "go bolder / replace stock")
 Parametric **"tracks × generator primitive × focus UI"** model: a Euclidean rhythm and an arp

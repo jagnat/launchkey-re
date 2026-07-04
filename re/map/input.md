@@ -18,9 +18,20 @@ hysteresis), and publishes it.
 | `control_value_emit` | `0x0800F840` | **publish** a conditioned (id,value) to subscriber callback list (`DAT_0800f8c0`) — 5 callers | ☆ |
 | `control_value_release` | `0x0800F884` | publish a control release to subscriber list (`DAT_0800f8c8`) — 5 callers | ☆ |
 | `control_calib_lut` | `0x0800F9C4` | per-control calibration/curve LUT lookup (used by `pot_scan` interp) | ☆ |
-**Knob→arp seam:** pots ARE scanned + published via `control_value_emit` → its subscriber list;
-the arp is just not a subscriber (published values go to the USB-CC-out path / Ableton bridge).
-A standalone knob→arp mod hooks here: add a subscriber to `DAT_0800f8c0` that writes arp cfg.
+**The publish seam, asm-decoded (2026-07-03):** `control_value_emit(r0=id, r1=value)` ★ —
+walks subscriber table @`0x2000E3B0` (literal @`0x0800F8C0`): count byte at `+0`, callback
+ptrs at `+4+i*4`, capacity 8 (☆ from the 0x24 stride to the next table); each called as
+`cb(r0=id, r1=value)` via `blx r3` (arg shuffle in `FUN_0800f878` — decompiles empty, it's
+`mov`-only). Three sibling fan-outs, same layout: `0x0800F85C`→table `0x2000E3D4`,
+`control_value_release`@`0x0800F884`→`0x2000E3F8` (cb gets `r0=id` only),
+`0x0800F8A2`→`0x2000E41C`. **This seam carries EVERY conditioned physical event with its
+discrete id** — pads/keys (`control_velocity_scan`), pots `|0x80` (`pot_scan`, decompile shows
+`control_value_emit(idx|0x80, value)` ★), strip 0x36 — so it is the input backbone for both
+the custom page (pad ids the arp-page router hides in r4) and standalone knob→arp.
+**Hook recipe:** prologue detour on `0x0800F840` (entry bytes `f8b50446` = push+`mov r4,r0`),
+record/act on (r0,r1), replay the 2 displaced insns, resume `0x0800F844|1` — r2/r3 are dead
+there. Implemented: `mods/asm/emit_tap.s` (ctlscope diagnostic). Alternatively REGISTER a real
+subscriber: write our fn ptr into a free slot at `0x2000E3B0` from an init hook.
 The 5 `control_claim_*` predicates gate which controls this module processes.
 **Module still partly unmapped:** ~50 smaller `0x0800F_` helpers (state getters/setters,
 `FUN_0800ff18`, the f9xx accessor cluster) remain `FUN_`.

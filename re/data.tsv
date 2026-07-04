@@ -1,4 +1,8 @@
 # addr	name	type	len
+0x0800F8C0	g_subscribers_emit	undefined4	4
+0x0800F8C4	g_subscribers_emit2	undefined4	4
+0x0800F8C8	g_subscribers_release	undefined4	4
+0x0800F8CC	g_subscribers_emit4	undefined	1
 0x080127F0	g_settings_subtable_127f0	undefined	1
 0x08013AC8	g_arp_state_ptr	undefined4	4
 0x08013B00	g_arp_group_colors	undefined	1

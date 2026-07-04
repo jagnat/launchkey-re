@@ -3,23 +3,20 @@
     .global custom_page_slot_render
 
 @ ============================================================================
-@ custom_page_slot_render — DIAGNOSTIC (pad-id scope, RENDER side).
+@ custom_page_slot_render — DIAGNOSTIC (control-id scope, RENDER side).
 @
 @ Hooked into main_task_tick's empty slot `bl nullsub_080081d4` @0x0800C95A.
-@ While the arp panel is active (*0x2000e628 != 0), draw the debug byte @0x2000DD37
-@ (last control-event id, written by arp_toggle.s) as an 8-bit BINARY readout on the
-@ bottom pad row: pad (8+i) lit blue if bit i of the id is set, else off. Low bit on
-@ pad 8, high bit on pad 0xf. When the panel is NOT active, paint nothing (leave idle).
+@ EVERY frame (no gate — the readout must be visible at standalone idle, where
+@ the future page toggle will live), draw the debug byte @0x2000DD37 (last
+@ control id published through control_value_emit, written by emit_tap.s) as an
+@ 8-bit BINARY readout on the bottom pad row: pad (8+i) lit blue if bit i of
+@ the id is set, else off. Low bit on pad 8, high bit on pad 0xf. Boot state
+@ (byte=0) renders the row dark — expected for a diagnostic.
 @ Uses direct layer (led_attr_set_direct sets 0x80 so it shows over palette).
 @ Preserve r4-r7 (main_task_tick reuses r4/r5); value held in r6, bit index in r7.
 @ ============================================================================
 custom_page_slot_render:
     push {r4, r5, r6, r7, lr}
-
-    movw r4, #0xE628           @ arp panel state base
-    movt r4, #0x2000
-    ldrb r0, [r4]
-    cbz  r0, 1f                @ panel not active -> paint nothing
 
     movw r4, #0xDD37           @ debug byte
     movt r4, #0x2000

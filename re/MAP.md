@@ -5,7 +5,7 @@ Deep reference lives in `re/map/*.md` topic sheets — open only the sheet(s) th
 query code via `scripts/q.py`. Do not bulk-load `re/firmware.c`.
 
 ## Current status (rewrite in place each milestone — keep ≤40 lines, no history)
-**Coverage:** see `re/coverage.txt` (2026-07-02: 334/1233 funcs = 27.1%, 35.5% code bytes).
+**Coverage:** see `re/coverage.txt` (2026-07-03: 342/1233 funcs = 27.7%, 35.6% code bytes).
 
 **Shipped + HW-validated (2026-07-01): Euclidean arp, standalone.** k via the Arp Rhythm pad
 row (free pads 0xd/0xe/0xf → E(4/5/6,n)), n via the Deviate knob while Arp is HELD, DAW-port
@@ -15,27 +15,29 @@ CC 0x5b selects presets 5-10. Details + formulas: `re/map/arp.md`. Keeper mods (
 
 **Active task: custom pad page (own the grid with our own UI).**
 - RENDER SEAM PROVEN on HW (2026-07-02): hook `main_task_tick`'s empty slot @`0x0800C95A`,
-  per pad `led_attr_set_direct` + `led_set_color`, preserve r4/r5/r6. Full recipe +
-  failure post-mortems: `re/map/leds.md`.
-- REMAINING = the page GATE + INPUT. Blocked: we cannot capture a discrete arp-pad id blind
-  (`param_1` ≠ pad id; the id travels in r4 — see `re/map/arp.md` "Input-side findings").
-  Next: **serial UART printf** (user soldering TX/GND; `usart_init`@`0x08009CB0`), or fallback
-  = use a known button id (0x17/0x19/0x60/0x61/0x62) as the page toggle. Also open: a safe
-  persistent RAM byte for the page flag (diagnostics currently borrow `0x2000DD37`).
+  per pad `led_attr_set_direct` + `led_set_color`, preserve r4/r5/r6. Recipe: `re/map/leds.md`.
+- INPUT UNBLOCKED in the corpus (2026-07-03, HW-pending): `control_value_emit(id,value)`
+  @`0x0800F840` publishes EVERY conditioned pad/key/pot/strip event with its discrete id to a
+  subscriber table @`0x2000E3B0` — decode + hook recipe in `re/map/input.md`. One seam serves
+  page toggle, in-page pad input, AND standalone knob→arp (old fork c). No UART needed.
+- NEXT FLASH = `ctlscope` diagnostic (built, awaiting go-ahead): emit-tap records last published
+  id @`0x2000DD37`; bottom pad row renders it in binary → learn the pad-id map, prove the seam.
+- Then: page gate (toggle control TBD from the id map) + menu system **authored in C**
+  (arm-none-eabi-gcc is installed; build.py needs a small `kind="append"` C variant).
+  Still open: a safe persistent RAM byte for the page flag (diagnostics borrow `0x2000DD37`).
 
-**Device currently runs:** the pad-id-scope DIAGNOSTIC build (keepers + `page_slot.s` render
-scope + `arp_toggle.s` input scope; harmless). `mods/build.py` MODS = the manifest of what a
+**Device currently runs:** the OLD pad-id-scope diagnostic (keepers + arp_toggle.s scope —
+superseded, arp_toggle.s retired to attic). `mods/build.py` MODS = the manifest of what a
 build contains; record here what is actually flashed.
 
-**Open forks (pick when unblocked):** (a) accept DAW-CC as v1 control, move on (live pattern
-view / Pitch+Octave tracks); (b) pads-only control surface (we own `arp_control_handler`/
-`arp_rhythm_select`); (c) standalone knob→arp via a `control_value_emit` subscriber
-(`DAT_0800f8c0`, see `re/map/input.md`) — buildable now; n still needs a side-effect-free home
-(not cfg[9]); Mutate→rotation is the next engine param.
+**Direction (2026-07-03, user-ratified):** page/menu foundation FIRST — looper, note-bounce,
+and generative modes all need latch-in/out pages + owned input, so they queue behind it.
+Euclid finishes as the first app on the new page (live pattern view, knobs=k/n/rot per
+`re/map/arp.md` "Design direction"). Full-custom C firmware rejected (USB/scan/no-SWD risk);
+middle path instead = C-authored mod payloads on the stock "OS". Looper last (timing + RAM).
 
 **Constraints:** SWD ruled out (no test points; user won't open unit). Never flash without an
-explicit user go-ahead. Design direction: "go bolder / replace stock" — parametric
-tracks × euclid-primitive model (`re/map/arp.md` "Design direction").
+explicit user go-ahead.
 
 ## Verified dead ends — do NOT re-attempt (details in the topic sheets)
 - `pad_page_render_dispatch`'s empty slots = DAW/host page path; never runs at standalone idle.

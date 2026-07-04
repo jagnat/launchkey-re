@@ -92,8 +92,11 @@
 0x0800DC0C	func	rcc_pclk2_from
 0x0800DC6C	func	assert_failed
 0x0800DCC0	func	config_init
+0x0800EFFC	func	j_control_value_emit_2
+0x0800F01C	func	j_control_value_emit_4
 0x0800F032	func	control_claim_byte
 0x0800F06A	func	pot_scan
+0x0800F204	func	j_control_value_emit_2_2
 0x0800F212	func	control_claim_hi
 0x0800F260	func	control_velocity_scan
 0x0800F4AE	func	control_claim_u16
@@ -102,7 +105,14 @@
 0x0800F7C2	func	control_claim_id78
 0x0800F828	func	j_assert_failed_4
 0x0800F840	func	control_value_emit
+0x0800F85C	func	control_value_emit_2
+0x0800F878	func	subscriber_args_load
 0x0800F884	func	control_value_release
+0x0800F8A2	func	control_value_emit_4
+0x0800F8C0	data	g_subscribers_emit
+0x0800F8C4	data	g_subscribers_emit2
+0x0800F8C8	data	g_subscribers_release
+0x0800F8CC	data	g_subscribers_emit4
 0x0800F9C4	func	control_calib_lut
 0x08010098	func	nullsub_08010098
 0x0801009A	func	nullsub_0801009a
@@ -117,6 +127,8 @@
 0x080101CC	func	nullsub_080101cc
 0x080101D2	func	nullsub_080101d2
 0x080104B6	func	page_mode_context
+0x080105FA	func	j_page_mode_context
+0x08010686	func	j_ctrl_group
 0x08010E28	func	nullsub_08010e28
 0x08010E2A	func	nullsub_08010e2a
 0x08010E30	func	nullsub_08010e30
