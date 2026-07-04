@@ -26,9 +26,9 @@ CC 0x5b selects presets 5-10. Details + formulas: `re/map/arp.md`. Keeper mods (
   (arm-none-eabi-gcc is installed; build.py needs a small `kind="append"` C variant).
   Still open: a safe persistent RAM byte for the page flag (diagnostics borrow `0x2000DD37`).
 
-**Device currently runs:** the OLD pad-id-scope diagnostic (keepers + arp_toggle.s scope —
-superseded, arp_toggle.s retired to attic). `mods/build.py` MODS = the manifest of what a
-build contains; record here what is actually flashed.
+**Device currently runs (flashed 2026-07-03):** the ctlscope diagnostic build = current
+`mods/build.py` MODS exactly (4 keepers + ctlscope-render + ctlscope-input). Bottom pad row
+= last published control id in binary (blue=1, low bit on pad 8; dark row until first event).
 
 **Direction (2026-07-03, user-ratified):** page/menu foundation FIRST — looper, note-bounce,
 and generative modes all need latch-in/out pages + owned input, so they queue behind it.
