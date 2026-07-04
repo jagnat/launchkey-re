@@ -60,11 +60,16 @@ MODS = [
          off=0xB88E,
          frm="042cc1600bd8dfe804f0030c1004120000218df80310",
          to ="c1600a2c0bd88df8034000bf00bf00bf00bf00bf00bf"),
-    # DIAGNOSTIC PAIR (control-id scope v3) — remove both once the custom-page toggle input
-    # is solved. v1/v2 post-mortem: both stored to 0x2000DD37, which is INSIDE live firmware
+    # DIAGNOSTIC PAIR (control-id scope v3) — DISABLED 2026-07-03 after it served its
+    # purpose (full surface id map measured -> re/map/input.md). Re-enable by moving the
+    # two dicts back inside MODS if another id question comes up.
+    # v1/v2 post-mortem: both stored to 0x2000DD37, which is INSIDE live firmware
     # statics (they extend to ~0x2000E771) and is overwritten by a pad-row writer -> both
-    # scopes read back id&8 regardless of hook layer. v3 moves the debug pair to 0x2000F000
-    # (unreferenced RAM: 2 KB above the last static, 4 KB below init SP) and records value too.
+    # scopes read back id&8 regardless of hook layer. v3 moved the debug pair to 0x2000F000
+    # (unreferenced RAM: 2 KB above the last static, 4 KB below init SP) and records value.
+]
+
+CTLSCOPE_DISABLED = [
     dict(kind="append", name="ctlscope-render",
          desc="DIAGNOSTIC render half of the control-id scope v3. main_task_tick empty slot "
               "@0x0800C95A: every frame, draw debug pair @0x2000F000 — id on the bottom row "
@@ -78,10 +83,10 @@ MODS = [
               "input backbone.",
          asm="emit_tap.s",
          detour_site=0x0800F840, detour_from="f8b50446"),
-    # Dead-end asm lives in mods/asm/attic/ (hello_page.s tracer, custom_page.s v1) —
-    # post-mortems in re/map/leds.md. n (pattern length) needs no hook: the stock Deviate knob
-    # writes cfg[9] while Arp is HELD (re/map/arp.md).
 ]
+# Dead-end asm lives in mods/asm/attic/ (hello_page.s tracer, custom_page.s v1) —
+# post-mortems in re/map/leds.md. n (pattern length) needs no hook: the stock Deviate knob
+# writes cfg[9] while Arp is HELD (re/map/arp.md).
 
 # ---------------------------------------------------------------- toolchain
 def find_tool(name):
