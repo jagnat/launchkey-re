@@ -87,8 +87,12 @@ r4/r5/r6 (r4=tick, r5=state ptr reused after the slot). HW result: full 16-pad g
 idle. Second empty slot available: `bl nullsub_080081f4`.
 **Remaining problem = the page GATE + INPUT, not the seam** (see MAP.md Current status):
 `arp_is_enabled()`@`0x080148B0` (byte@`0x2000e268`) flips with the arp engine → poor page
-selector; arp-panel-active byte@`0x2000e628`+0. Scratch byte in use for diagnostics:
-`0x2000DD37` (LED attr array tail, idx 0x7f — safe while pad 0x7f unused).
+selector; arp-panel-active byte@`0x2000e628`+0.
+**Scratch RAM for mods = `0x2000F000`+** (unreferenced by any code: firmware statics end
+~`0x2000E771` per corpus sweep; init SP `0x2000FFF8` leaves ~4 KB stack headroom above).
+⚠ `0x2000DD37` is NOT safe (v1/v2 ctlscope post-mortem): it sits inside live statics and a
+firmware writer (pad-row related, stores `id&8`-like values) overwrites it every scan — both
+early scopes read back 8/0 regardless of hook layer because of THIS, not their hooks.
 
 ## Failure post-mortems (keep — they encode the model)
 - **v1 `custom_page.s` / `custom-idle-page`** (attic): (a) gated on `arp_get_state()==0`, but

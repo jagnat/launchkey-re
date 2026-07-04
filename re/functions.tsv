@@ -423,7 +423,7 @@
 0x0800EBBC	FUN_0800ebbc	90	1	0	11163	44	void FUN_0800ebbc(int *param_1,undefined4 param_2);
 0x0800EC16	FUN_0800ec16	4	1	0	11207	9	undefined4 FUN_0800ec16(int param_1);
 0x0800EC1C	FUN_0800ec1c	16	1	1	11216	14	void FUN_0800ec1c(undefined4 param_1);
-0x0800EC54	FUN_0800ec54	924	1	14	11230	295	void FUN_0800ec54(void);
+0x0800EC54	control_press_scan	924	1	14	11230	295	void control_press_scan(void);
 0x0800EFFC	j_control_value_emit_2	10	1	1	11525	14	void j_control_value_emit_2(undefined4 param_1,undefined2 param_2);
 0x0800F006	FUN_0800f006	46	1	2	11539	18	void FUN_0800f006(void);
 0x0800F00E	FUN_0800f00e	14	1	0	11557	9	uint FUN_0800f00e(undefined4 param_1,undefined4 param_2,int param_3);
@@ -918,7 +918,7 @@
 0x0801659A	FUN_0801659a	66	0	2	25301	27	undefined4 FUN_0801659a(int param_1,int param_2,undefined4 param_3,undefined4 param_4);
 0x080166CE	FUN_080166ce	60	2	2	25328	17	void FUN_080166ce(int param_1,int param_2,undefined1 param_3);
 0x08016780	FUN_08016780	18	3	0	25345	12	uint FUN_08016780(uint param_1);
-0x08016792	FUN_08016792	16	4	0	25357	12	undefined1 FUN_08016792(uint param_1);
+0x08016792	control_type_get	16	4	0	25357	12	undefined1 control_type_get(uint param_1);
 0x080167A8	FUN_080167a8	24	1	0	25369	9	undefined4 FUN_080167a8(undefined4 *param_1);
 0x080167C0	FUN_080167c0	8	1	0	25378	10	void FUN_080167c0(void);
 0x080167C8	FUN_080167c8	198	1	5	25388	71	longlong FUN_080167c8(void);

@@ -16,19 +16,20 @@ CC 0x5b selects presets 5-10. Details + formulas: `re/map/arp.md`. Keeper mods (
 **Active task: custom pad page (own the grid with our own UI).**
 - RENDER SEAM PROVEN on HW (2026-07-02): hook `main_task_tick`'s empty slot @`0x0800C95A`,
   per pad `led_attr_set_direct` + `led_set_color`, preserve r4/r5/r6. Recipe: `re/map/leds.md`.
-- INPUT UNBLOCKED in the corpus (2026-07-03, HW-pending): `control_value_emit(id,value)`
-  @`0x0800F840` publishes EVERY conditioned pad/key/pot/strip event with its discrete id to a
-  subscriber table @`0x2000E3B0` — decode + hook recipe in `re/map/input.md`. One seam serves
-  page toggle, in-page pad input, AND standalone knob→arp (old fork c). No UART needed.
-- NEXT FLASH = `ctlscope` diagnostic (built, awaiting go-ahead): emit-tap records last published
-  id @`0x2000DD37`; bottom pad row renders it in binary → learn the pad-id map, prove the seam.
+- INPUT UNBLOCKED in the corpus (2026-07-03, HW-pending): **pads = control ids 0x00-0x0F**
+  (type table `g_control_type_tbl`@`0x0801C7D0`); at standalone `control_press_scan` publishes
+  them via `control_value_emit(id,value)`@`0x0800F840` → subscriber table @`0x2000E3B0`
+  (decode + hook recipe in `re/map/input.md`). One seam serves page toggle, in-page pad input,
+  AND standalone knob→arp (old fork c). No UART needed.
+- Mod scratch RAM = `0x2000F000`+ (statics end ~`0x2000E771`; `0x2000DD37` is poisoned — see
+  dead ends). Page flag can live there.
+- NEXT FLASH = `ctlscope` **v3** (built, awaiting go-ahead): records (id,value) @`0x2000F000/1`;
+  bottom row = id in blue binary, top row = value low-byte in green → confirm the pad-id map.
 - Then: page gate (toggle control TBD from the id map) + menu system **authored in C**
   (arm-none-eabi-gcc is installed; build.py needs a small `kind="append"` C variant).
-  Still open: a safe persistent RAM byte for the page flag (diagnostics borrow `0x2000DD37`).
 
-**Device currently runs (flashed 2026-07-03):** the ctlscope diagnostic build = current
-`mods/build.py` MODS exactly (4 keepers + ctlscope-render + ctlscope-input). Bottom pad row
-= last published control id in binary (blue=1, low bit on pad 8; dark row until first event).
+**Device currently runs (flashed 2026-07-03):** ctlscope **v2** — superseded; its readout is
+poisoned by the `0x2000DD37` contention (always shows `id&8`). Flash v3 next.
 
 **Direction (2026-07-03, user-ratified):** page/menu foundation FIRST — looper, note-bounce,
 and generative modes all need latch-in/out pages + owned input, so they queue behind it.
@@ -45,8 +46,10 @@ explicit user go-ahead.
 - `led_set_color` without `led_attr_set_direct` loses to the palette layer at idle.
 - Knobs turned WITHOUT holding Arp never reach arp cfg (emit pot CCs 0x15-0x1c/ch16 only;
   InControl enable `9F 0C 7F` doesn't change that — Ableton bridges them in software).
-- Arp-panel pads 6/7 as custom toggles: `arp_control_handler` ignores them, and blind pad-id
-  readouts can't identify pads (id is in r4, not `param_1`).
+- Arp-panel pads 6/7 as custom toggles: `arp_control_handler` ignores them.
+- `0x2000DD37` as a scratch/debug byte: inside live statics, firmware overwrites it every scan
+  (poisoned BOTH early pad-id scopes into the false "param_1 ≠ pad id" verdict). Mod scratch
+  RAM = `0x2000F000`+ (see `re/map/leds.md`).
 - cfg[9] (Deviate) as a home for n: double-duties as a timing/swing param.
 
 ## Topic sheets (`re/map/`)

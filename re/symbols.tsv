@@ -92,6 +92,7 @@
 0x0800DC0C	func	rcc_pclk2_from
 0x0800DC6C	func	assert_failed
 0x0800DCC0	func	config_init
+0x0800EC54	func	control_press_scan
 0x0800EFFC	func	j_control_value_emit_2
 0x0800F01C	func	j_control_value_emit_4
 0x0800F032	func	control_claim_byte
@@ -262,6 +263,7 @@
 0x08015D68	func	j_assert_failed_6
 0x08015DAC	func	confsys_flash_pump
 0x08015FF4	func	confsys_obj_xfer
+0x08016792	func	control_type_get
 0x08016908	func	layout_observer_add
 0x0801692C	func	layout_channel_set
 0x0801695C	func	layout_mode_get
@@ -325,6 +327,7 @@
 0x0801BCA6	func	nullsub_0801bca6
 0x0801BF04	func	j_serstor_flash_erase
 0x0801C250	data	g_color_palette
+0x0801C7D0	data	g_control_type_tbl
 0x0801CF14	func	SystemInit
 0x0801D0F0	func	NMI_Handler
 0x0801D0F2	func	HardFault_Handler

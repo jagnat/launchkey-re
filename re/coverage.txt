@@ -1,2 +1,2 @@
-functions named: 342 / 1233 (27.7%)
-code bytes in named funcs: 25641 / 71987 (35.6%)
+functions named: 344 / 1233 (27.9%)
+code bytes in named funcs: 26581 / 71987 (36.9%)

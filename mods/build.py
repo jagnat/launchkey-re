@@ -60,22 +60,22 @@ MODS = [
          off=0xB88E,
          frm="042cc1600bd8dfe804f0030c1004120000218df80310",
          to ="c1600a2c0bd88df8034000bf00bf00bf00bf00bf00bf"),
-    # DIAGNOSTIC PAIR (control-id scope v2) — remove both once the custom-page toggle input
-    # is solved. v1 (arp_toggle.s hook on control_dispatch's bl arp_control_handler) failed:
-    # param_1 there is NOT the discrete pad id — see re/map/arp.md "Input-side findings".
-    # v2 taps the scanner's PUBLISH seam instead: control_value_emit(id, value) sees every
-    # conditioned pad/key/pot/strip event with its discrete id (see re/map/input.md).
+    # DIAGNOSTIC PAIR (control-id scope v3) — remove both once the custom-page toggle input
+    # is solved. v1/v2 post-mortem: both stored to 0x2000DD37, which is INSIDE live firmware
+    # statics (they extend to ~0x2000E771) and is overwritten by a pad-row writer -> both
+    # scopes read back id&8 regardless of hook layer. v3 moves the debug pair to 0x2000F000
+    # (unreferenced RAM: 2 KB above the last static, 4 KB below init SP) and records value too.
     dict(kind="append", name="ctlscope-render",
-         desc="DIAGNOSTIC render half of the control-id scope. main_task_tick empty slot "
-              "@0x0800C95A: every frame, draw the debug byte @0x2000DD37 as 8-bit binary on "
-              "the bottom pad row (blue=1, low bit on pad 8). Preserves r4-r7.",
+         desc="DIAGNOSTIC render half of the control-id scope v3. main_task_tick empty slot "
+              "@0x0800C95A: every frame, draw debug pair @0x2000F000 — id on the bottom row "
+              "(blue, low bit pad 8), value low-byte on the top row (green, low bit pad 0).",
          asm="page_slot.s",
          detour_site=0x0800C95A, detour_from="fbf73bfc", detour_call=True),
     dict(kind="append", name="ctlscope-input",
-         desc="DIAGNOSTIC input half v2. Prologue detour on control_value_emit @0x0800F840: "
-              "record every published control id (r0) into the debug byte @0x2000DD37, replay "
-              "the 2 displaced entry insns, resume @0x0800F844. Proves the subscriber seam "
-              "planned as the custom-page input backbone.",
+         desc="DIAGNOSTIC input half v3. Prologue detour on control_value_emit @0x0800F840: "
+              "record (id, value-low) into 0x2000F000/1, replay the 2 displaced entry insns, "
+              "resume @0x0800F844. Proves the subscriber seam planned as the custom-page "
+              "input backbone.",
          asm="emit_tap.s",
          detour_site=0x0800F840, detour_from="f8b50446"),
     # Dead-end asm lives in mods/asm/attic/ (hello_page.s tracer, custom_page.s v1) —

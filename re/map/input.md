@@ -8,13 +8,27 @@ claim/route → `ctrl_in_*` transform stages → subscriber fan-out.
 `control_surface_scan`@`0x0800B8B8` is a **polled task** (run from `peripheral_init_all`'s main
 loop) that scans the analog controls, conditions each raw value (deadzone, calibration curve,
 hysteresis), and publishes it.
+
+**Control-id → type map** ★ (`g_control_type_tbl`@`0x0801C7D0`, 256 B, read via
+`control_type_get`@`0x08016792`):
+| ids | type | what |
+|---|---|---|
+| `0x00-0x0F` | 3 | **the 16 pads** (16 entries exactly) |
+| `0x10-0x30` | 4 | buttons (0x17 Play, 0x19, … live here; type-0 holes = unpopulated) |
+| `0x36,0x37` | 5 | the two touch strips (pitch / mod) |
+| `0x38-0x3F` | 6 | InControl-mode velocity/pressure controls (see `control_velocity_scan`) |
+| `0x50-0x58` | 7 | ditto, second bank |
+| `0x78,0x79` | 8 | `control_surface_scan`'s special pair |
+| `0x80+` | 1/2 | pots namespace (`pot_scan` emits `idx|0x80`); 0x80-0xFF pattern ☆ unclear |
+
 | symbol | addr | role | conf |
 |---|---|---|---|
-| `control_surface_scan` | `0x0800B8B8` | top scan task: runs the 3 group scanners + handles ids 0x78/0x79 | ☆ |
+| `control_surface_scan` | `0x0800B8B8` | top scan task: runs the group scanners + handles ids 0x78/0x79 | ☆ |
 | `control_raw_read` | `0x0800A9E0` | read raw 12-bit value + mode-nibble (`&0xf000`) for a control id, via `key_event_scan`, with low-16 hysteresis (11 callers) | ★ |
 | `pot_scan` | `0x0800F06A` | scan the **8 pots** (ids 0x80+); ADC→value with deadzone (<0x259→0, mid linear, >0xdac→max) + `control_calib_lut` interpolation | ☆ |
 | `pitchstrip_scan` | `0x0800F4F0` | scan id **0x36** (pitch touch strip); center-scaled to 0x8000 (bipolar/pitchbend) | ☆ |
-| `control_velocity_scan` | `0x0800F260` | scan low ids (0+) with strike/velocity detection (pads/keys); 3 parallel state arrays (+0x80/+0x180/+0x280) | ☆ |
+| `control_press_scan` | `0x0800EC54` | **the standalone press path**: iterate ids 0..0x7f, type∉{0,8}; mode-nibble 0 = digital threshold (raw≥0x800) → `control_value_emit(id, mapped-val)` + `emit_4`; mode 0x1000 = analog velocity state machine. Pads at standalone publish HERE | ☆ |
+| `control_velocity_scan` | `0x0800F260` | strike/velocity scan for **type-6/7 controls in InControl mode ONLY** (`type∈{6,7} && raw&0xf000==0x2000`); 3 parallel state arrays (+0x180/+0x280/+0x380); emits press(id,0xffff)/pressure via `emit_4`/release. Publishes NOTHING at standalone | ★ |
 | `control_value_emit` | `0x0800F840` | **publish** a conditioned (id,value) to subscriber callback list (`DAT_0800f8c0`) — 5 callers | ☆ |
 | `control_value_release` | `0x0800F884` | publish a control release to subscriber list (`DAT_0800f8c8`) — 5 callers | ☆ |
 | `control_calib_lut` | `0x0800F9C4` | per-control calibration/curve LUT lookup (used by `pot_scan` interp) | ☆ |
