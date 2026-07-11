@@ -21,6 +21,11 @@ flash→eyeball loop. Run with `.venv/bin/python` (has mido).
 - Seen but unmapped: `control_change ch16 cc103` from a transport/round button.
 
 ## Validation backlog
+- External-clock-sync deadness (clock.md): stream 0xF8 at ≠120 BPM into the device; its own
+  clock-out rate should NOT follow (RX entry points look unwired). Also 0xFA/0xFC no-ops.
+- SysEx tempo set (clock.md): cmd `0x0A`, 14-bit BPM [20,600] → measure clock-out rate change.
+- `clock_transport_start` free-real-estate claim: call from a mod, confirm no stock behaviour
+  change while `g_clock_transport_ticks` advances.
 - Full arp rate table (other 7 rates; 1/16-straight = 6 clocks/step already ★★).
 - Scale/chord interval table (enable scale, play chromatic, capture quantized out).
 - Velocity curves (A/B the curve-select).

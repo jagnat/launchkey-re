@@ -36,7 +36,8 @@ Remaining unnamed MMIO-touchers are tiny redundant veneers (GPIO config thunks
 ## Vector table / ISRs (scripts/scan_vectors.py)
 All exception + SVD-named IRQ handlers named in `symbols.tsv`. Cross-checks:
 - **TIM1_UP_TIM10_IRQHandler == `led_key_matrix_scan_isr`@080095A8** (matrix scan off TIM1).
-- **TIM2_IRQHandler**@08008378 = a real ISR (candidate arp/tempo clock).
+- **TIM2_IRQHandler**@08008378 = the 1 kHz system tick: increments `g_ms_counter`@`0x20002400`
+  (+ an unread twin @`0x20002404`), the time base for the clock/tempo engine (`re/map/clock.md`).
 - **OTG_FS_IRQHandler → `usb_otg_fs_isr`@08018184** — USB is interrupt-driven (earlier
   "polled" guess was wrong).
 - Most other IRQ vectors → weak default stubs in the `0x0801D2xx` cluster (unused peripherals).

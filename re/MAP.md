@@ -5,7 +5,7 @@ Deep reference lives in `re/map/*.md` topic sheets — open only the sheet(s) th
 query code via `scripts/q.py`. Do not bulk-load `re/firmware.c`.
 
 ## Current status (rewrite in place each milestone — keep ≤40 lines, no history)
-**Coverage:** see `re/coverage.txt` (2026-07-03: 342/1233 funcs = 27.7%, 35.6% code bytes).
+**Coverage:** see `re/coverage.txt` (updated at each corpus regen).
 
 **Shipped + HW-validated (2026-07-01): Euclidean arp, standalone.** k via the Arp Rhythm pad
 row (free pads 0xd/0xe/0xf → E(4/5/6,n)), n via the Deviate knob while Arp is HELD, DAW-port
@@ -34,6 +34,10 @@ CC 0x5b selects presets 5-10. Details + formulas: `re/map/arp.md`. Keeper mods (
   rotation), Fixed Chord = back home. Engine PORTED TO C (`mods/c/rhythm.c`, replaces
   rhythm_decode.s → attic): UI override > pad-row presets 5-10 > stock 0-4; stock/DAW
   selector change cancels the override. Then: M4 looper/bounce/generative.
+- M4 PREP (2026-07-10): **clock/tempo engine fully mapped statically** (`re/map/clock.md`):
+  one 24 PPQN tick counter `g_clock_ticks`@`0x200014B8` drives clock-out + arp + LED pulse;
+  tempo = `clock_set_tick_period_us(2500000/BPM)`; transport start/stop machinery exists but
+  is UNWIRED on the Mini → free for a looper song-position. HW checks queued in validation.md.
 
 **Device currently runs (flashed 2026-07-03):** M2.1 UI layer = current `mods/build.py`
 MODS (4 keepers + `ui-layer-m1m2` with emit-tap swallow). Shift+pad8 toggles the custom
@@ -66,6 +70,7 @@ explicit user go-ahead.
 | `leds.md` | LED compositor (2 layers + direct bit), pad-page render architecture, custom-page recipe, post-mortems |
 | `arp.md` | arp+rhythm engine, arp config struct, CC map, shipped Euclid mod, knob routing truth, arp page UI, design direction |
 | `input.md` | control-surface scanner (pots/strips/pads ADC path), MIDI input router, control-mapping (`ctrl_in_*`) layer |
+| `clock.md` | clock/tempo engine: 24 PPQN tick source, tempo set/get, (dead) transport, MIDI-clock-out pump, LED blink phase — the M4 timing foundation |
 | `midi.md` | USB-MIDI RX path, TX stack, `ctrl_out_encode`, smoothing/thinning engine |
 | `scale-chord.md` | scale/chord engine, quantizer, chord editor |
 | `system.md` | boot, hardware drivers, ISRs/vectors, `g_settings`, velocity, config/SPI-NOR storage, open leads |

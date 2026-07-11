@@ -1,6 +1,8 @@
 # Launchkey Mini MK3 v1.2 (build461) firmware — symbol map / RE checkpoint
 # Source of truth for names. Edit here or in Ghidra; ImportSymbols replays this.
 # addr	kind	name
+0x08008198	func	counter_latch_init
+0x080081A4	func	u32_inc
 0x080081AC	func	timer_elapsed
 0x080081CC	func	nullsub_080081cc
 0x080081CE	func	nullsub_080081ce
@@ -20,6 +22,7 @@
 0x0800833C	func	rcc_ahb1_enable
 0x08008342	func	rcc_apb1_enable
 0x0800835A	func	rcc_apb2_enable
+0x08008360	func	delay_ticks_busy
 0x08008378	func	TIM2_IRQHandler
 0x080083BC	func	peripheral_init_all
 0x08008DC2	func	clock_config_boot
@@ -50,6 +53,19 @@
 0x0800A3B4	func	j_assert_failed
 0x0800A5B0	func	confsys_load_validate
 0x0800A9E0	func	control_raw_read
+0x0800AFD0	func	clock_engine_init
+0x0800B026	func	clock_get_tick_counter_ptr
+0x0800B02A	func	clock_get_transport_ticks
+0x0800B030	func	clock_get_transport_running
+0x0800B036	func	clock_estimator_reset
+0x0800B068	func	clock_transport_continue
+0x0800B072	func	clock_transport_start
+0x0800B07A	func	clock_transport_stop
+0x0800B084	func	clock_transport_continue
+0x0800B086	func	clock_get_tick_period_us
+0x0800B08C	func	clock_set_tick_period_us
+0x0800B0AA	func	clock_ext_tick_rx
+0x0800B0BA	func	clock_engine_pump
 0x0800B35C	func	midi_tx
 0x0800B3D0	func	midi_send
 0x0800B3F0	func	midi_tx_sysex
@@ -57,9 +73,15 @@
 0x0800B4DE	func	j_midi_tx_sysex_2
 0x0800B4E2	func	tx_free_headroom
 0x0800B502	func	tx_queue_load
+0x0800B828	func	midi_clock_out_init
+0x0800B842	func	midi_clock_out_enable
+0x0800B848	func	midi_clock_out_suppress
+0x0800B84E	func	midi_clock_out_pump
 0x0800B8B8	func	control_surface_scan
 0x0800B8D2	func	route_is_incontrol
 0x0800B91C	func	control_claimed_any
+0x0800BA5C	func	led_blink_phase_init
+0x0800BA74	func	led_blink_phase_pump
 0x0800BB50	func	led_set_color
 0x0800BB6C	func	led_attr_set_direct
 0x0800BC2C	func	pad_page_render_dispatch
@@ -317,6 +339,7 @@
 0x0801ACB0	func	chord_slot_release
 0x0801ACF0	func	chord_edit_handler
 0x0801AE24	data	g_chord_edit_cfg_ptr
+0x0801B770	func	sysex_tempo_set
 0x0801BAEE	func	j_midi_tx_sysex_4
 0x0801BAF0	func	j_midi_tx_sysex_5
 0x0801BBEC	func	midi_out_forward
@@ -372,6 +395,11 @@
 0x0801D320	func	I2C3_ER_IRQHandler
 0x0801D324	func	FPU_IRQHandler
 0x0801D328	func	SPI4_IRQHandler
+0x20001498	data	g_clock_state
+0x200014B0	data	g_clock_transport_ticks
+0x200014B8	data	g_clock_ticks
 0x20002128	data	g_settings
+0x20002400	data	g_ms_counter
 0x20003868	data	g_led_descriptors
 0x2000AE40	data	g_led_rgb_buffer
+0x2000E618	data	g_midi_clock_out_state
