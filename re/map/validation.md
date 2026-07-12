@@ -18,6 +18,9 @@ flash→eyeball loop. Run with `.venv/bin/python` (has mido).
 - Arp note-ons appear only when actually streaming; use **Latch + a held chord** so the arp
   free-runs for capture.
 - Physical knobs (not held-Arp) emit pot CCs `0x15..0x1c` on **ch16 (0xBF), DAW port**.
+- **M3.1 knob capture (2026-07-12):** with the UI layer active, knob sweeps emit ZERO DAW-port
+  traffic (emit_4 swallow); after layer exit, clean stock `bf 15 00→7f` runs resume. The pot-CC
+  source is `surface_value_handler`'s ctrl_in chain fed by `control_value_emit_4` (input.md).
 - Seen but unmapped: `control_change ch16 cc103` from a transport/round button.
 
 ## Validation backlog

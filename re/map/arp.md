@@ -55,9 +55,12 @@ a side-effect-free home for n is still wanted. Next planned: Mutate knob → rot
   (rightmost 3 = 0x1A/0x1B/0x1C). These do NOT reach `arp_cc_in_handler` (only ch0 0x55-0x5d on
   the DAW port do). The "knobs do Mutate/Deviate in Ableton" behavior = Ableton's Launchkey
   script bridging, not firmware routing. DAW-mode enable `9F 0C 7F` does not change this.
-- **Buildable alternative (★★ HW-proven 2026-07-03):** the knobs publish internally as ids
-  **0x38-0x3F** via `control_value_emit`@`0x0800F840` → subscriber list (see input.md). The arp
-  simply isn't a subscriber; a standalone knob→arp mod = tap/subscribe there and write arp cfg.
+- **Buildable alternative (corrected 2026-07-12):** the knobs publish internally as ids
+  **0x38-0x3F**, but their CONTINUOUS values ride `control_value_emit_4`@`0x0800F8A2`, NOT
+  `control_value_emit` (F840 carries only the discrete touch edge — the 2026-07-03 "knobs via
+  F840" reading was overbroad; the M3 euclid-knob bug exposed it). A standalone knob→anything
+  mod = tap `emit_4` (input.md fan-out table + hook recipe); the Euclid app's k/n/rot knobs do
+  exactly this (`ui_tap_emit4` → `ui_on_value`, mods/c/ui.c).
 
 ## Arp Controls PAGE UI (note 23) — fully traced press→config
 Two structs: UI state `g_arp_state_ptr`@`0x2000e628` (+0 panel-active, +2 held, **+0xc active

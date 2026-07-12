@@ -29,19 +29,31 @@ CC 0x5b selects presets 5-10. Details + formulas: `re/map/arp.md`. Keeper mods (
 - M2.1 HW-VALIDATED (2026-07-03): emit tap SWALLOWS ids <0x80 while the layer is active
   (skip the fan-out; keys ≥0x80 pass; releases always pass) — full surface capture, no
   MIDI/LED leaks, no ghost Shift latch.
-- M3 BUILT (flash-pending): **Euclid app** (mode 2, via home pad0). 16-pad live pattern
-  view (playing step highlighted from `RHY->step`), knobs 1/2/3 = k/n/rot (full 1..16 +
-  rotation), Fixed Chord = back home. Engine PORTED TO C (`mods/c/rhythm.c`, replaces
-  rhythm_decode.s → attic): UI override > pad-row presets 5-10 > stock 0-4; stock/DAW
-  selector change cancels the override. Then: M4 looper/bounce/generative.
+- M3 HW-FLASHED (2026-07-12): **Euclid app** (mode 2, via home pad0). 16-pad live pattern
+  view (playing step highlighted from `RHY->step`), Fixed Chord = back home. Engine PORTED
+  TO C (`mods/c/rhythm.c`, replaces rhythm_decode.s → attic): UI override > pad-row presets
+  5-10 > stock 0-4; stock/DAW selector change cancels the override.
+- M3.1 HW-VALIDATED (2026-07-12): euclid-knob fix. Root cause: standalone knob continuous
+  values ride the 4th fan-out `control_value_emit_4@0x0800F8A2` (subscriber
+  `surface_value_handler@0x0800C1B6` → ctrl_in pot stages = the pot-CC source); F840 carries
+  only discrete presses, so the M2.1 swallow never saw them. Fix: 2nd prologue detour
+  `ui_tap_emit4` (same recipe, resume `0xF8A6|1`) → `ui_on_value(id,value)` — swallows ids
+  <0x80 while the layer is active + drives k/n/rot (a knob edit also reclaims the euclid
+  override). MEASURED on DAW port: knob sweeps on the euclid page = zero `bf 1x`; after layer
+  exit = clean stock `bf 15` runs. User-validated audible (2026-07-12): pattern sweeps + step
+  marker moves with arp on. Seam truth + subscriber map: input.md.
+  UX gap (decision pending): the app doesn't enable the arp, and the Arp button is swallowed
+  in-layer — arp must be on (+ Latch) BEFORE entering. Options: auto-enable on app entry vs
+  in-app arp tile / Arp-button passthrough.
+  NEXT: M4 looper/bounce/generative.
 - M4 PREP (2026-07-10): **clock/tempo engine fully mapped statically** (`re/map/clock.md`):
   one 24 PPQN tick counter `g_clock_ticks`@`0x200014B8` drives clock-out + arp + LED pulse;
   tempo = `clock_set_tick_period_us(2500000/BPM)`; transport start/stop machinery exists but
   is UNWIRED on the Mini → free for a looper song-position. HW checks queued in validation.md.
 
-**Device currently runs (flashed 2026-07-03):** M2.1 UI layer = current `mods/build.py`
-MODS (4 keepers + `ui-layer-m1m2` with emit-tap swallow). Shift+pad8 toggles the custom
-home page; surface capture verdict pending.
+**Device currently runs (flashed 2026-07-12):** M3.1 = current `mods/build.py` MODS (3 inline
+keepers + `ui-layer` C block M1+M2.1+M3+M3.1 knob fix). Shift+pad8 → home; home pad0 → Euclid
+app; knobs 1/2/3 = k/n/rot. Full surface capture incl. knobs (M3.1 validated).
 
 **Direction (2026-07-03, user-ratified):** page/menu foundation FIRST — looper, note-bounce,
 and generative modes all need latch-in/out pages + owned input, so they queue behind it.
@@ -63,6 +75,8 @@ explicit user go-ahead.
   (poisoned BOTH early pad-id scopes into the false "param_1 ≠ pad id" verdict). Mod scratch
   RAM = `0x2000F000`+ (see `re/map/leds.md`).
 - cfg[9] (Deviate) as a home for n: double-duties as a timing/swing param.
+- Capturing standalone knob VALUES at `control_value_emit`@F840: they ride `emit_4`@F8A2 only
+  (F840 = discrete presses/touch edges) — hook both seams for full capture (input.md).
 
 ## Topic sheets (`re/map/`)
 | sheet | contents |

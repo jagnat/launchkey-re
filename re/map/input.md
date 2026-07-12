@@ -20,8 +20,9 @@ hysteresis), and publishes it.
 | `0x50-0x58` | 7 | 9 entries, absent on the Mini — ☆ the 9 faders of the bigger Launchkey MK3s (family-shared scan config) |
 | `0x78,0x79` | 8 | `control_surface_scan`'s special pair |
 | `0x80-0x98` | 1/2 | **the 25 keybed keys**, one id per semitone (C=0x80 … C+2oct=0x98); type 1=white, 2=black (the 1/2 table pattern IS the keyboard layout) |
-Keys and pad PRESSURE stream through the seam too (green-row readout tracked pad pressure)
-— the publish seam sees the whole surface, notes included.
+Every physical control appears on the publish seams with these ids, notes included — but the
+seams SPLIT by event kind: discrete presses on `control_value_emit`, continuous values
+(knobs/strips/pressure) on `control_value_emit_4` (see the fan-out table below).
 
 | symbol | addr | role | conf |
 |---|---|---|---|
@@ -34,20 +35,38 @@ Keys and pad PRESSURE stream through the seam too (green-row readout tracked pad
 | `control_value_emit` | `0x0800F840` | **publish** a conditioned (id,value) to subscriber callback list (`DAT_0800f8c0`) — 5 callers | ☆ |
 | `control_value_release` | `0x0800F884` | publish a control release to subscriber list (`DAT_0800f8c8`) — 5 callers | ☆ |
 | `control_calib_lut` | `0x0800F9C4` | per-control calibration/curve LUT lookup (used by `keybed_scan` interp) | ☆ |
-**The publish seam, asm-decoded (2026-07-03):** `control_value_emit(r0=id, r1=value)` ★ —
-walks subscriber table @`0x2000E3B0` (literal @`0x0800F8C0`): count byte at `+0`, callback
-ptrs at `+4+i*4`, capacity 8 (☆ from the 0x24 stride to the next table); each called as
-`cb(r0=id, r1=value)` via `blx r3` (arg shuffle in `FUN_0800f878` — decompiles empty, it's
-`mov`-only). Three sibling fan-outs, same layout: `0x0800F85C`→table `0x2000E3D4`,
-`control_value_release`@`0x0800F884`→`0x2000E3F8` (cb gets `r0=id` only),
-`0x0800F8A2`→`0x2000E41C`. **This seam carries EVERY conditioned physical event with its
-discrete id** ★★ HW-proven 2026-07-03: pads/buttons/knobs/strips via `control_press_scan`,
-keys `|0x80` via `keybed_scan` — the full id map is the table above. It is the input backbone
-for the custom page AND standalone knob→arp.
-**Hook recipe:** prologue detour on `0x0800F840` (entry bytes `f8b50446` = push+`mov r4,r0`),
-record/act on (r0,r1), replay the 2 displaced insns, resume `0x0800F844|1` — r2/r3 are dead
-there. Implemented: `mods/asm/emit_tap.s` (ctlscope diagnostic). Alternatively REGISTER a real
-subscriber: write our fn ptr into a free slot at `0x2000E3B0` from an init hook.
+**The publish seams, asm-decoded (2026-07-03, split resolved 2026-07-12):** four sibling
+fan-outs, same layout — count byte at `+0`, callback ptrs at `+4+i*4`, capacity 8 (☆ from the
+0x24 stride); each cb called as `cb(r0=id, r1=value)` via `blx r3` (arg shuffle in
+`subscriber_args_load`@`0x0800F878` — decompiles empty, it's `mov`-only):
+| fan-out | table | carries (standalone) |
+|---|---|---|
+| `control_value_emit`@`0x0800F840` | `0x2000E3B0` | **discrete presses** w/ value: pads (velocity), buttons, keys `\|0x80` (velocity), analog first-touch |
+| `control_value_emit_2`@`0x0800F85C` | `0x2000E3D4` | touch/activation events (analog state-machine cases 3/4 + keybed via `j_control_value_emit_2_2`) |
+| `control_value_release`@`0x0800F884` | `0x2000E3F8` | releases (cb gets `r0=id` only) |
+| `control_value_emit_4`@`0x0800F8A2` | `0x2000E41C` | **the CONTINUOUS value stream**: knobs, strips, pad pressure — hysteresis-gated (Δ>0x40, ~10-tick rate limit) in `control_press_scan`; value 0..0xFFFF |
+★ **Standalone knobs publish continuous values ONLY on `emit_4`** — they never pass through
+`control_value_emit` (that carries just their touch/press edge). Proven statically 2026-07-12
+(thunk `j_control_value_emit_4`@`0x0800F01C` = `mov r0,r5; b.w 0x800f8a2`, fed from
+`control_press_scan`'s Δ-gated block) after the M3 euclid-knob bug measured the M2.1 F840-only
+swallow leaking pot CCs. The earlier "the F840 seam sees the whole surface" claim was
+overbroad: full COVERAGE of ids yes, but analog VALUES ride emit_4.
+**Subscribers (registration walked 2026-07-12):** `control_subscribers_init`@`0x0800C200`
+(from `peripheral_init_all`, via thunks `0x0800B8A8-B8B4` → `control_subscribe_*`@`0x0800F7DC/
+F7EE/F80C/F82E`) registers the standalone set: emit→`0x0800C01C`, emit2→`surface_touch_handler`
+@`0x0800C16E`, release→`0x0800C0C6` (= the fn named `midi_in_router` — it IS the release-chain
+driver; ⚠ name predates this discovery), emit4→**`surface_value_handler`@`0x0800C1B6`** which
+runs `ctrl_in_wheel_scaled`/`ctrl_in_special_pickup`/`ctrl_in_pot_press` →
+`midi_note_state_set` → `ctrl_out_dispatch` → **this is where the standalone ch16 pot CCs
+(0xBF 0x15-0x1C) come from**. `incontrol_subscribers_init`@`0x0800C4B4` registers a second
+set (emit→`0x0800C41C`, release→`0x0800C446`, emit4→`incontrol_value_cc_mirror`@`0x0800C472`
+= raw `B1 id value>>9` CC mirror, gated `route_is_incontrol` → dead in standalone).
+**Hook recipe (applies to BOTH `0x0800F840` and `0x0800F8A2` — identical shape):** prologue
+detour (entry bytes `f8b50446` = `push {r3-r7,lr}; mov r4,r0`), act on (r0,r1), replay the 2
+displaced insns, resume `site+4|1`. Both epilogues are `pop {r0,r4-r7,pc}` (returns caller's
+original r3 in r0) — a swallow must mimic `mov r0,r3; bx lr`. Implemented: `ui_tap_emit` +
+`ui_tap_emit4` (mods/asm/ui_glue.s). Alternatively REGISTER a real subscriber: write our fn
+ptr into a free table slot from an init hook.
 The 5 `control_claim_*` predicates gate which controls this module processes.
 **Module still partly unmapped:** ~50 smaller `0x0800F_` helpers (state getters/setters,
 `FUN_0800ff18`, the f9xx accessor cluster) remain `FUN_`.

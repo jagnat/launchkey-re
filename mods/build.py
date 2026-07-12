@@ -67,13 +67,16 @@ MODS = [
               "Shift+pad8 toggles the layer. Home (mode 1): pad0 = Euclid app, pad8 = exit. "
               "Euclid app (mode 2): 16-pad live pattern view (playing step highlighted), "
               "knobs 1/2/3 = k/n/rot, Fixed Chord = back home. While active: emit tap "
-              "swallows ids <0x80 (keys pass) + dispatch gate blocks stock UI. Engine: "
+              "(discrete presses) + emit_4 tap (continuous values: knobs/strips/pressure "
+              "— the standalone knob seam AND the ch16 pot-CC source) swallow ids <0x80 "
+              "(keys pass) + dispatch gate blocks stock UI. Engine: "
               "rhythm_decode ported to C, UI override > pad-row presets 5-10 > stock 0-4; "
               "stock selector change cancels the override. State @0x2000F000.",
          srcs=["asm/ui_glue.s", "c/ui.c", "c/rhythm.c"],
          detours=[
              dict(site=0x0800C95A, frm="fbf73bfc", call=True, sym="ui_frame"),
              dict(site=0x0800F840, frm="f8b50446", sym="ui_tap_emit"),
+             dict(site=0x0800F8A2, frm="f8b50446", sym="ui_tap_emit4"),
              dict(site=0x0800F884, frm="70b50446", sym="ui_tap_release"),
              dict(site=0x0800C742, frm="fbf745fd", call=True, sym="ui_dispatch_gate"),
              dict(site=0x080175B0, frm="70b5294b", sym="rhythm_decode_new"),

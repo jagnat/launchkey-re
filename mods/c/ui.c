@@ -12,6 +12,11 @@
  *                       Returns the swallow verdict: while the layer is
  *                       active, surface ids <0x80 never reach the stock
  *                       subscriber fan-out (keys >=0x80 always play).
+ *   ui_on_value(id,v)   from ui_tap_emit4 (control_value_emit_4 prologue) —
+ *                       the CONTINUOUS value stream. Standalone knobs publish
+ *                       ONLY here (control_value_emit carries just discrete
+ *                       presses); its stock subscriber chain is what emits the
+ *                       ch16 pot CCs, so the same swallow rule kills the leak.
  *   ui_on_release(id)   from ui_tap_release (control_value_release prologue).
  *   ui_dispatch_gate    (asm) aborts control_dispatch's layer-0 chain while
  *                       mode != 0.
@@ -127,18 +132,31 @@ uint32_t ui_on_press(uint32_t id, uint32_t value)
             rhythm_decode_new(ARP_CFG, 0);
         }
     } else if (UI->mode == 2) {
-        if (id == ID_FIXED) {                   /* back to home */
+        if (id == ID_FIXED)                     /* back to home */
             UI->mode = 1;
-        } else if (id >= KNOB(0) && id <= KNOB(2)) {
-            uint32_t v = value >> 12;           /* 16-bit -> 0..15 */
-            if (id == KNOB(0))      UI->k   = v + 1;   /* 1..16 */
-            else if (id == KNOB(1)) UI->n   = v + 1;   /* 1..16 */
-            else                    UI->rot = v;       /* 0..15 */
-            rhythm_decode_new(ARP_CFG, 0);
-        }
     }
 
     return (id < 0x80 && (was_active || UI->mode)) ? 1 : 0;
+}
+
+/* Continuous value stream (knobs/strips/pressure). Knob edits arrive here,
+ * not in ui_on_press — standalone knobs never reach control_value_emit. */
+uint32_t ui_on_value(uint32_t id, uint32_t value)
+{
+    if (UI->magic != UI_MAGIC)
+        return 0;
+
+    if (UI->mode == 2 && id >= KNOB(0) && id <= KNOB(2)) {
+        uint32_t v = value >> 12;               /* 16-bit -> 0..15 */
+        if (id == KNOB(0))      UI->k   = v + 1;   /* 1..16 */
+        else if (id == KNOB(1)) UI->n   = v + 1;   /* 1..16 */
+        else                    UI->rot = v;       /* 0..15 */
+        UI->euclid_on = 1;   /* a knob edit reclaims the override if a DAW
+                              * selector change canceled it mid-page */
+        rhythm_decode_new(ARP_CFG, 0);
+    }
+
+    return (id < 0x80 && UI->mode) ? 1 : 0;
 }
 
 void ui_on_release(uint32_t id)

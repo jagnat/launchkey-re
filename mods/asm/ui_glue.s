@@ -34,6 +34,31 @@ ui_tap_emit:
     mov  r0, r3                     @ stock-identical return quirk
     bx   lr
 
+@ ---- ui_tap_emit4: prologue detour on control_value_emit_4 @0x0800F8A2 -----
+@ (r0=id, r1=value 0..0xFFFF). The CONTINUOUS value fan-out: standalone knobs,
+@ strips and pad pressure publish here (hysteresis-gated in control_press_scan)
+@ and never pass through control_value_emit — its subscriber FUN_0800c1b6 runs
+@ the ctrl_in pot stages that emit the ch16 pot CCs. Call ui_on_value(id,value);
+@ nonzero = SWALLOW the fan-out (no pot CC reaches the DAW port while the layer
+@ is active). Entry insns, resume address and the pop-{r0,...}-returns-r3 quirk
+@ are byte-identical in shape to control_value_emit — same recipe throughout.
+    .global ui_tap_emit4
+    .thumb_func
+ui_tap_emit4:
+    push {r0, r1, r2, r3, ip, lr}
+    bl   ui_on_value
+    cmp  r0, #0
+    pop  {r0, r1, r2, r3, ip, lr}   @ flags survive the pop
+    bne  9f
+    push {r3, r4, r5, r6, r7, lr}   @ displaced
+    mov  r4, r0                     @ displaced
+    movw r2, #0xF8A7                @ 0x0800F8A6 | thumb
+    movt r2, #0x0800
+    bx   r2
+9:
+    mov  r0, r3                     @ stock-identical return quirk
+    bx   lr
+
 @ ---- ui_tap_release: prologue detour on control_value_release @0x0800F884 --
 @ (r0=id). Displaced entry: push {r4,r5,r6,lr}; mov r4,r0. Resume @0x0800F888.
     .global ui_tap_release
