@@ -42,18 +42,30 @@ CC 0x5b selects presets 5-10. Details + formulas: `re/map/arp.md`. Keeper mods (
   override). MEASURED on DAW port: knob sweeps on the euclid page = zero `bf 1x`; after layer
   exit = clean stock `bf 15` runs. User-validated audible (2026-07-12): pattern sweeps + step
   marker moves with arp on. Seam truth + subscriber map: input.md.
-  UX gap (decision pending): the app doesn't enable the arp, and the Arp button is swallowed
-  in-layer — arp must be on (+ Latch) BEFORE entering. Options: auto-enable on app entry vs
-  in-app arp tile / Arp-button passthrough.
+- M3.2 HW-VALIDATED (flashed 2026-07-25, user-confirmed incl. M3.2a) — closes M3.1's arp UX gap, both ways at
+  once. (a) Arp passthrough: while Arp (id `0x15`) is held or the stock arp panel is latched
+  (`0x2000E628`+0), stock owns the whole surface — both emit taps stop swallowing, the dispatch
+  gate lets the layer-0 chain run, `ui_frame` cedes the pads (clears direct bits) so
+  `arp_page_render` paints; held-Arp knob→cfg routing returns free (same emit_4 chain).
+  M3.2a (HW-found, fix flashed 2026-07-25): input and pads need SEPARATE predicates —
+  `arp_stock_input()` = held-or-latched (taps/gate, hands over on the press), but
+  `arp_stock_pads()` = the LATCHED panel byte only. Ceding pads at press time clears our
+  direct bits while the palette layer still holds idle content → red fill (`led-palette-42-red`)
+  for the whole stock hold-timer window, until `arp_page_render` fills that layer.
+  (b) Auto-enable: Euclid app entry calls `arp_set_enabled(1)` if off (idempotent, its tail
+  re-runs our `rhythm_decode` detour; override survives — selector unchanged) and remembers via
+  `arp_auto`; exit undoes only that, a manual Arp press in-app clears the flag. Gate verdict
+  moved asm→C (`ui_dispatch_block`), so `ui_glue.s` is now pure register marshalling.
   NEXT: M4 looper/bounce/generative.
 - M4 PREP (2026-07-10): **clock/tempo engine fully mapped statically** (`re/map/clock.md`):
   one 24 PPQN tick counter `g_clock_ticks`@`0x200014B8` drives clock-out + arp + LED pulse;
   tempo = `clock_set_tick_period_us(2500000/BPM)`; transport start/stop machinery exists but
   is UNWIRED on the Mini → free for a looper song-position. HW checks queued in validation.md.
 
-**Device currently runs (flashed 2026-07-12):** M3.1 = current `mods/build.py` MODS (3 inline
-keepers + `ui-layer` C block M1+M2.1+M3+M3.1 knob fix). Shift+pad8 → home; home pad0 → Euclid
-app; knobs 1/2/3 = k/n/rot. Full surface capture incl. knobs (M3.1 validated).
+**Device currently runs (flashed 2026-07-25):** M3.2a = current `mods/build.py` MODS (3 inline
+keepers + `ui-layer` C block M1+M2.1+M3+M3.1+M3.2a), image 89,328 B ending `0x0801DCF0`.
+Shift+pad8 → home; home pad0 → Euclid app (auto-enables arp); knobs 1/2/3 = k/n/rot; hold Arp
+→ stock arp menu. Full surface capture incl. knobs, minus the M3.2 arp passthrough.
 
 **Direction (2026-07-03, user-ratified):** page/menu foundation FIRST — looper, note-bounce,
 and generative modes all need latch-in/out pages + owned input, so they queue behind it.

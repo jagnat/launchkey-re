@@ -3,8 +3,8 @@
 
 @ ============================================================================
 @ ui_glue — asm shims wiring the ROM into the C payload (mods/c/ui.c).
-@ struct ui_state @0x2000F000: +0 magic (0x55AC0DE5), +4 mode, +5 shift_down,
-@ +8 frame — layout shared with ui.c, keep in sync.
+@ All state/predicate logic lives in C (ui.h struct @0x2000F000); these shims
+@ only marshal registers, replay displaced insns, and resume.
 @ Stock code is compiler-generated, so SP is 8-aligned at every bl; every
 @ shim pushes a multiple of 8 bytes before calling C.
 @ ============================================================================
@@ -77,24 +77,22 @@ ui_tap_release:
 @ First call inside control_dispatch's layer-0 handler chain (r0 = control id).
 @ Stack at this point = [saved r4][saved lr -> event pump], per the 0x0800C72C
 @ prologue (push {r4,lr}; mov r4,r0; bl gate; cmp; mov r0,r4; beq here).
-@ mode==0 or struct not yet initialized -> plain return (stock unchanged).
-@ mode!=0 -> pop {r4, pc}: unwind control_dispatch's frame and return straight
-@ to the pump — the entire stock handler chain is skipped. The shift/settings
-@ layer path (branch taken before this slot) stays fully stock, so its layer
-@ state can never wedge while our UI is up. r1-r3 are dead here (caller-saved
-@ across the bl this replaces).
+@ The verdict lives in C — ui_dispatch_block(id) (ui.c) — so the arp-UI
+@ passthrough predicate has one home. 0 -> plain return (stock chain runs:
+@ layer off, Arp button, or the stock arp UI owns the surface). nonzero ->
+@ pop {r4, pc}: unwind control_dispatch's frame and return straight to the
+@ pump — the entire stock handler chain is skipped. The shift/settings layer
+@ path (branch taken before this slot) stays fully stock, so its layer state
+@ can never wedge while our UI is up. r1-r3 are dead here (caller-saved
+@ across the bl this replaces); flags survive the pop.
     .global ui_dispatch_gate
     .thumb_func
 ui_dispatch_gate:
-    movw r2, #0xF000
-    movt r2, #0x2000
-    ldr  r3, [r2]                   @ magic
-    movw r1, #0x0DE5
-    movt r1, #0x55AC
-    cmp  r3, r1
-    bne  1f
-    ldrb r2, [r2, #4]               @ mode
-    cbz  r2, 1f
-    pop  {r4, pc}                   @ abort stock dispatch
-1:
+    push {r0, lr}
+    bl   ui_dispatch_block
+    cmp  r0, #0
+    pop  {r0, lr}
+    bne  9f
     bx   lr
+9:
+    pop  {r4, pc}                   @ abort stock dispatch

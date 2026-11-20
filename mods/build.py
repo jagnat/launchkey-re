@@ -63,15 +63,21 @@ MODS = [
          frm="042cc1600bd8dfe804f0030c1004120000218df80310",
          to ="c1600a2c0bd88df8034000bf00bf00bf00bf00bf00bf"),
     dict(kind="append", name="ui-layer",
-         desc="Custom UI layer M1+M2.1+M3 (C payload: c/ui.c + c/rhythm.c + asm/ui_glue.s). "
+         desc="Custom UI layer M1+M2.1+M3+M3.2 (C payload: c/ui.c + c/rhythm.c + asm/ui_glue.s). "
               "Shift+pad8 toggles the layer. Home (mode 1): pad0 = Euclid app, pad8 = exit. "
               "Euclid app (mode 2): 16-pad live pattern view (playing step highlighted), "
               "knobs 1/2/3 = k/n/rot, Fixed Chord = back home. While active: emit tap "
               "(discrete presses) + emit_4 tap (continuous values: knobs/strips/pressure "
               "— the standalone knob seam AND the ch16 pot-CC source) swallow ids <0x80 "
-              "(keys pass) + dispatch gate blocks stock UI. Engine: "
-              "rhythm_decode ported to C, UI override > pad-row presets 5-10 > stock 0-4; "
-              "stock selector change cancels the override. State @0x2000F000.",
+              "(keys pass) + dispatch gate blocks stock UI (verdict in C: ui_dispatch_block). "
+              "M3.2 arp passthrough: while Arp (0x15) is held or the stock arp panel is "
+              "latched (@0x2000E628+0), stock owns INPUT (taps/gate pass) so the full stock "
+              "arp menu + held-Arp knob routing work in-layer; the PADS cede on the latched "
+              "panel byte only (M3.2a — ceding at press time bared the red idle palette for "
+              "the whole hold window). Euclid app entry auto-enables the arp if off, exit "
+              "undoes it; a manual Arp press keeps it. Engine: rhythm_decode ported to C, UI override > "
+              "pad-row presets 5-10 > stock 0-4; stock selector change cancels the "
+              "override. State @0x2000F000.",
          srcs=["asm/ui_glue.s", "c/ui.c", "c/rhythm.c"],
          detours=[
              dict(site=0x0800C95A, frm="fbf73bfc", call=True, sym="ui_frame"),

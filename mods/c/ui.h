@@ -15,6 +15,9 @@ struct ui_state {
     uint32_t frame;        /* +8                                   */
     uint8_t  euclid_on;    /* +12 rhythm-engine override live      */
     uint8_t  k, n, rot;    /* +13/+14/+15 euclid params (UI-owned) */
+    uint8_t  arp_down;     /* +16 Arp button physically held       */
+    uint8_t  pads_ceded;   /* +17 direct bits cleared for stock arp panel */
+    uint8_t  arp_auto;     /* +18 we auto-enabled the arp at app entry    */
 };
 #define UI ((volatile struct ui_state *)0x2000F000)
 

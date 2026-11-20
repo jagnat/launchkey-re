@@ -1,0 +1,39 @@
+
+16 pads (top row then bottom row from l-r):
+P00: 0
+P01: 1
+P02: 2
+...
+P15: 15
+
+8 knobs (l-r):
+K0: 56
+K2: 57
+...
+K8: 63
+
+shift: 25
+transpose: 18
+octave +: 19
+octave -: 20
+
+launch scene: 16
+stop/solo/mute: 17
+
+arp: 21
+fixed chord: 22
+
+play: 23
+record: 24
+
+Pitch bend slider: 54
+modulation slider: 55
+
+Keyboard keys:
+C0: 128
+C#0: 129
+...
+C1: 140
+...
+C2: 152
+
