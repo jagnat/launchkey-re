@@ -18,3 +18,7 @@ firmware/app_v1.2.thumb.asm
 tools/xkey/
 __pycache__/
 *.pyc
+
+# Vendor firmware: fetched from Novation by scripts/fetch_firmware.py, never committed
+firmware/
+re/firmware.c
